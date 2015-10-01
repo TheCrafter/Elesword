@@ -1,17 +1,93 @@
-#################
-#    Folders    #
-#################
+##########################
+# System Crap not needed #
+##########################
 
-bin/
-tmp/
-deps/
+#
+## Windows
+#
 
-#################
-# Visual Studio #
-#################
+# Windows image file caches
+Thumbs.db
+ehthumbs.db
 
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+#
+## Mac OSX
+#
+
+# Thumbnails
+._*
+
+# Other crap
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Files that might appear on external disk
+.Spotlight-V100
+.Trashes
+
+
+#################################
+# Visual Studio Crap not needed #
+#################################
+
+# Project Files
+*.sln
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+
+# Build generated
+*.obj
+*.exe
+*.log
+*.tlog
+*.idb
+*.pdb
+*.ilk
+*.lastbuildstate
+*..unsuccessfulbuild
+
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Oo]bj/
+
+# Precompiled Headers
+*.ipch
+*.pch
+ipch/
+
+# Visual C++ cache files
+*.aps
+*.ncb
 *.opensdf
 *.sdf
+
+# Visual Studio profiler
+*.psess
+*.vsp
+*.vspx
+
+# User-specific files
 *.suo
-*.user
-*.filters
+
+###################################
+# Untracked Files and Directories #
+###################################
+
+# Libraries
+deps/
+
+# External resources
+ext/
+
+# Doxygen generated documentation
+doc/gen/
