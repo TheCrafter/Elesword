@@ -1,0 +1,17 @@
+#################
+#    Folders    #
+#################
+
+bin/
+tmp/
+deps/
+
+#################
+# Visual Studio #
+#################
+
+*.opensdf
+*.sdf
+*.suo
+*.user
+*.filters
