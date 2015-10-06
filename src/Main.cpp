@@ -11,6 +11,13 @@
 #include <GLFW/glfw3.h>
 #include <SOIL.h>
 
+#pragma warning(push)
+#pragma warning(disable:4201)
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#pragma warning(pop)
+
 #include "Shader.hpp"
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -147,6 +154,12 @@ int main()
         glUniform1i(glGetUniformLocation(prog.GetProgID(), "texture2"), 1);
 
         glUseProgram(prog.GetProgID());
+
+        glm::mat4 trans;
+        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+        trans = glm::rotate(trans, glm::radians((GLfloat)glfwGetTime() * 50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+        GLuint transformLoc = glGetUniformLocation(prog.GetProgID(), "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
