@@ -60,10 +60,58 @@ int main()
     // Define the viewport dimensions
     glViewport(0, 0, 800, 600);
 
+    // Setup OpenGL options
+    glEnable(GL_DEPTH_TEST);
+
     Shader prog;
     prog.Init("res/Shader/Vertex/shader.vs", "res/Shader/Fragment/shader.frag");
     prog.Use();
 
+    GLfloat vertices[] = {
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+     0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+     0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+    -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+    -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+};
+
+    /*
     // Set up vertex data (and buffer(s)) and attribute pointers
     GLfloat vertices[] = {
         // Positions       // Colors         // Texture Coords
@@ -76,41 +124,41 @@ int main()
         0, 1, 3,   // First Triangle
         1, 2, 3    // Second Triangle
     };
+    */
 
-    GLuint VBO, EBO, VAO;
+    GLuint VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
 
     // Bind the Vertex Array Object first, then bind and set vertex buffer(s) and attribute pointer(s).
     glBindVertexArray(VAO);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
         glVertexAttribPointer(
             0,                      // The vertex attribute we want to configure. On shader we used layout (position = 0)!
             4,                      // Size of vertex attribute. vec3 = 3
             GL_FLOAT,               // type of data
             GL_FALSE,               // do we want the data to be normalized?
-            8 * sizeof(GLfloat),    // stride: The space between consecutive vertex attribute sets
+            5 * sizeof(GLfloat),    // stride: The space between consecutive vertex attribute sets
             (GLvoid*)0);            // offset where position data begins in buffer
         glEnableVertexAttribArray(0);
+        /*
         glVertexAttribPointer(
-            1,                                  // The vertex attribute we want to configure. On shader we used layout (position = 0)!
+            1,                                  // The vertex attribute we want to configure
             4,                                  // Size of vertex attribute. vec3 = 3
             GL_FLOAT,                           // type of data
             GL_FALSE,                           // do we want the data to be normalized?
             8 * sizeof(GLfloat),                // stride: The space between consecutive vertex attribute sets
             (GLvoid*)(3 * sizeof(GLfloat)));    // offset where position data begins in buffer
         glEnableVertexAttribArray(1);
+        */
         glVertexAttribPointer(
-            2,                                  // The vertex attribute we want to configure. On shader we used layout (position = 0)!
+            2,                                  // The vertex attribute we want to configure
             2,                                  // Size of vertex attribute. vec3 = 3
             GL_FLOAT,                           // type of data
             GL_FALSE,                           // do we want the data to be normalized?
-            8 * sizeof(GLfloat),                // stride: The space between consecutive vertex attribute sets
-            (GLvoid*)(6 * sizeof(GLfloat)));    // offset where position data begins in buffer
+            5 * sizeof(GLfloat),                // stride: The space between consecutive vertex attribute sets
+            (GLvoid*)(3 * sizeof(GLfloat)));    // offset where position data begins in buffer
         glEnableVertexAttribArray(2);
 
         glBindBuffer(GL_ARRAY_BUFFER, 0); // Note that this is allowed, the call to glVertexAttribPointer registered VBO as the currently bound vertex buffer object so afterwards we can safely unbind
@@ -136,6 +184,19 @@ int main()
         SOIL_free_image_data(image);
     glBindTexture(GL_TEXTURE_2D, 0);
 
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
+
     // Game loop
     while(!glfwWindowShouldClose(window))
     {
@@ -144,7 +205,7 @@ int main()
 
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glActiveTexture(GL_TEXTURE0);	// Activate the texture unit first before binding texture
         glBindTexture(GL_TEXTURE_2D, textures[0]);
@@ -155,14 +216,30 @@ int main()
 
         glUseProgram(prog.GetProgID());
 
-        glm::mat4 trans;
-        trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-        trans = glm::rotate(trans, glm::radians((GLfloat)glfwGetTime() * 50.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-        GLuint transformLoc = glGetUniformLocation(prog.GetProgID(), "transform");
-        glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
+        glm::mat4 model;
+
+        glm::mat4 view;
+        // Note that we're translating the scene in the reverse direction of where we want to move
+        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0));
+
+        glm::mat4 projection;
+        projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
+
+        glUniformMatrix4fv(glGetUniformLocation(prog.GetProgID(), "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(prog.GetProgID(), "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
         glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+            for(GLuint i = 0; i < 10; i++)
+            {
+                // Calculate the model matrix for each object and pass it to shader before drawing
+                glm::mat4 model;
+                model = glm::translate(model, cubePositions[i]);
+                GLfloat angle = 20.0f * i;
+                model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
+                glUniformMatrix4fv(glGetUniformLocation(prog.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
         glBindVertexArray(0);
 
         // Swap the screen buffers
@@ -172,7 +249,6 @@ int main()
     // Properly de-allocate all resources once they've outlived their purpose
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
     return 0;
