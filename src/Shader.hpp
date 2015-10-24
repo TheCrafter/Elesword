@@ -1,5 +1,4 @@
-#ifndef ELESWORD_SHADER_HPP
-#define ELESWORD_SHADER_HPP
+#pragma once
 
 #include <string>
 
@@ -21,5 +20,3 @@ private:
     // Program ID
     GLuint mProgramID;
 };
-
-#endif

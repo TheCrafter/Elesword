@@ -19,8 +19,19 @@
 #pragma warning(pop)
 
 #include "Shader.hpp"
+#include "Camera.hpp"
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void doMovement(GLfloat deltaTime);
+
+
+// Camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+bool keys[1024];
+GLfloat lastX = 400, lastY = 300;
+bool firstMouse = true;
 
 int main()
 {
@@ -46,6 +57,8 @@ int main()
         return -1;
     }
     glfwSetKeyCallback(window, keyCallback);
+    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwMakeContextCurrent(window);
 
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
@@ -109,22 +122,7 @@ int main()
      0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
     -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
     -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-};
-
-    /*
-    // Set up vertex data (and buffer(s)) and attribute pointers
-    GLfloat vertices[] = {
-        // Positions       // Colors         // Texture Coords
-        0.5f, 0.5f,  0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f,   // Top Right
-        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,   // Bottom Right
-       -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,   // Bottom Left
-       -0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f    // Top Left
     };
-    GLuint indices[] = {  // Note that we start from 0!
-        0, 1, 3,   // First Triangle
-        1, 2, 3    // Second Triangle
-    };
-    */
 
     GLuint VBO, VAO;
     glGenVertexArrays(1, &VAO);
@@ -197,11 +195,19 @@ int main()
         glm::vec3(-1.3f,  1.0f, -1.5f)
     };
 
+    GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
+    GLfloat lastFrame = 0.0f;  	// Time of last frame
+
     // Game loop
     while(!glfwWindowShouldClose(window))
     {
+        GLfloat currentFrame = (GLfloat)glfwGetTime();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+
         // Check if any events have been activiated (key pressed, mouse moved etc.) and call corresponding response functions
         glfwPollEvents();
+        doMovement(deltaTime);
 
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -216,11 +222,10 @@ int main()
 
         glUseProgram(prog.GetProgID());
 
-        glm::mat4 model;
-
         glm::mat4 view;
         // Note that we're translating the scene in the reverse direction of where we want to move
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0));
+        //view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0));
+        view = camera.GetView();
 
         glm::mat4 projection;
         projection = glm::perspective(45.0f, 800.0f / 600.0f, 0.1f, 100.0f);
@@ -259,8 +264,47 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
     (void*)scancode;
     (void*)mode;
 
-    // When a user presses the escape key, we set the WindowShouldClose property to true, 
-    // closing the application
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
         glfwSetWindowShouldClose(window, GL_TRUE);
+    if(key >= 0 && key < 1024)
+    {
+        if(action == GLFW_PRESS)
+            keys[key] = true;
+        else if(action == GLFW_RELEASE)
+            keys[key] = false;
+    }
+}
+
+void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+{
+    (void*)window;
+
+    if(firstMouse)
+    {
+        lastX = (GLfloat)xpos;
+        lastY = (GLfloat)ypos;
+        firstMouse = false;
+    }
+
+    GLfloat xoffset = (GLfloat)xpos - lastX;
+    GLfloat yoffset = lastY - (GLfloat)ypos;
+    lastX = (GLfloat)xpos;
+    lastY = (GLfloat)ypos;
+
+    camera.RotateCamera(xoffset, yoffset);
+}
+
+void doMovement(GLfloat deltaTime)
+{
+    // Camera controls
+    GLfloat cameraSpeed = 5.0f;
+    GLfloat distance = cameraSpeed * deltaTime;
+    if(keys[GLFW_KEY_W])
+        camera.MoveCamera(Camera::MoveDirection::M_IN, distance);
+    if(keys[GLFW_KEY_S])
+        camera.MoveCamera(Camera::MoveDirection::M_OUT, distance);
+    if(keys[GLFW_KEY_A])
+        camera.MoveCamera(Camera::MoveDirection::M_LEFT, distance);
+    if(keys[GLFW_KEY_D])
+        camera.MoveCamera(Camera::MoveDirection::M_RIGHT, distance);
 }
