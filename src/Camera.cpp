@@ -6,7 +6,6 @@ Camera::Camera(glm::vec3 pos, glm::vec3 front, glm::vec3 up)
     mCameraFront = front;
     mCameraUp    = up;
 
-    mCameraBaseSpeed = 5.0f;
     mSensitivity     = 0.05f;
     mYaw             = -90.0f; // We need that inverted initially
     mPitch           = 0.0f;
