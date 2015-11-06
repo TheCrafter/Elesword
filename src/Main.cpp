@@ -187,19 +187,41 @@ int main()
         // Cube
         //---
         lightingShader.Use();
-        GLint modelLoc       = glGetUniformLocation(lightingShader.GetProgID(), "model"),
-              viewLoc        = glGetUniformLocation(lightingShader.GetProgID(), "view"),
-              projLoc        = glGetUniformLocation(lightingShader.GetProgID(), "projection"),
-              objectColorLoc = glGetUniformLocation(lightingShader.GetProgID(), "objectColor"),
-              lightColorLoc  = glGetUniformLocation(lightingShader.GetProgID(), "lightColor"),
-              lightPosLoc    = glGetUniformLocation(lightingShader.GetProgID(), "lightPos"),
-              viewPosLoc     = glGetUniformLocation(lightingShader.GetProgID(), "viewPos");
+        GLint modelLoc         = glGetUniformLocation(lightingShader.GetProgID(), "model"),
+              viewLoc          = glGetUniformLocation(lightingShader.GetProgID(), "view"),
+              projLoc          = glGetUniformLocation(lightingShader.GetProgID(), "projection"),
+              objectColorLoc   = glGetUniformLocation(lightingShader.GetProgID(), "objectColor"),
+              lightColorLoc    = glGetUniformLocation(lightingShader.GetProgID(), "lightColor"),
+              lightPosLoc      = glGetUniformLocation(lightingShader.GetProgID(), "lightPos"),
+              viewPosLoc       = glGetUniformLocation(lightingShader.GetProgID(), "viewPos"),
+              matAmbientLoc    = glGetUniformLocation(lightingShader.GetProgID(), "material.ambient"),
+              matDiffuseLoc    = glGetUniformLocation(lightingShader.GetProgID(), "material.diffuse"),
+              matSpecularLoc   = glGetUniformLocation(lightingShader.GetProgID(), "material.specular"),
+              matShineLoc      = glGetUniformLocation(lightingShader.GetProgID(), "material.shininess"),
+              lightAmbientLoc  = glGetUniformLocation(lightingShader.GetProgID(), "light.ambient"),
+              lightDiffuseLoc  = glGetUniformLocation(lightingShader.GetProgID(), "light.diffuse"),
+              lightSpecularLoc = glGetUniformLocation(lightingShader.GetProgID(), "light.specular");
+
+        glm::vec3 lightColor;
+        lightColor.x = (float)sin(glfwGetTime() * 2.0f);
+        lightColor.y = (float)sin(glfwGetTime() * 0.7f);
+        lightColor.z = (float)sin(glfwGetTime() * 1.3f);
+
+        glm::vec3 diffuseColor = lightColor   * glm::vec3(0.5f); // Decrease the influence
+        glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // Low influence
 
         // Set uniforms for fragment shader
         glUniform3f(objectColorLoc, 1.0f, 0.5f, 0.31f);
         glUniform3f(lightColorLoc,  1.0f, 1.0f, 1.0f );
         glUniform3f(lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
         glUniform3f(viewPosLoc, camera.mCameraPos.x, camera.mCameraPos.y, camera.mCameraPos.z);
+        glUniform3f(matAmbientLoc,  1.0f, 0.5f, 0.31f);
+        glUniform3f(matDiffuseLoc,  1.0f, 0.5f, 0.31f);
+        glUniform3f(matSpecularLoc, 0.5f, 0.5f, 0.5f );
+        glUniform1f(matShineLoc, 32.0f);
+        glUniform3f(lightAmbientLoc, ambientColor.x, ambientColor.y, ambientColor.z);
+        glUniform3f(lightDiffuseLoc, diffuseColor.x, diffuseColor.y, diffuseColor.z);
+        glUniform3f(lightSpecularLoc, 1.0f, 1.0f, 1.0f);
 
         // Pass matrices to shader
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
