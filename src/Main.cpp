@@ -193,6 +193,20 @@ int main()
     GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
     GLfloat lastFrame = 0.0f;  	// Time of last frame
 
+    glm::vec3 cubePositions[] = 
+    {
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(2.0f, 5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3(2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f, 3.0f, -7.5f),
+        glm::vec3(1.3f, -2.0f, -2.5f),
+        glm::vec3(1.5f, 2.0f, -2.5f),
+        glm::vec3(1.5f, 0.2f, -1.5f),
+        glm::vec3(-1.3f, 1.0f, -1.5f)
+    };
+
     // Game loop
     while(!glfwWindowShouldClose(window))
     {
@@ -229,6 +243,9 @@ int main()
               matSpecularLoc   = glGetUniformLocation(lightingShader.GetProgID(), "material.specular"),
               matShineLoc      = glGetUniformLocation(lightingShader.GetProgID(), "material.shininess"),
               lightPosLoc      = glGetUniformLocation(lightingShader.GetProgID(), "light.position"),
+              lightDirLoc      = glGetUniformLocation(lightingShader.GetProgID(), "light.direction"),
+              lightCutoffLoc   = glGetUniformLocation(lightingShader.GetProgID(), "light.cutOff"),
+              lightOutCutoffLoc = glGetUniformLocation(lightingShader.GetProgID(), "light.outerCutOff"),
               lightAmbientLoc  = glGetUniformLocation(lightingShader.GetProgID(), "light.ambient"),
               lightDiffuseLoc  = glGetUniformLocation(lightingShader.GetProgID(), "light.diffuse"),
               lightSpecularLoc = glGetUniformLocation(lightingShader.GetProgID(), "light.specular");
@@ -245,12 +262,19 @@ int main()
         glUniform3f(lightAmbientLoc, 0.2f, 0.2f, 0.2f);
         glUniform3f(lightDiffuseLoc, 0.5f, 0.5f, 0.5f);
         glUniform3f(lightSpecularLoc, 0.5f, 0.5f, 0.5f);
+            
+        glUniform3f(lightPosLoc, camera.mCameraPos.x, camera.mCameraPos.y, camera.mCameraPos.z);
+        glUniform3f(lightDirLoc, camera.mCameraFront.x, camera.mCameraFront.y, camera.mCameraFront.z);
+        glUniform1f(lightCutoffLoc, glm::cos(glm::radians(12.5f)));
+        glUniform1f(lightOutCutoffLoc, glm::cos(glm::radians(17.5f)));
         
+        glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "light.constant"), 1.0f);
+        glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "light.linear"), 0.045f);
+        glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "light.quadratic"), 0.0075f);
 
         // Pass matrices to shader
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         // Bind diffuse map
         glActiveTexture(GL_TEXTURE0);
@@ -261,9 +285,19 @@ int main()
 
         // Draw the container (using container's vertex attributes)
         glBindVertexArray(containerVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+            for(GLuint i = 0; i < 10; i++)
+            {
+                model = glm::mat4();
+                model = glm::translate(model, cubePositions[i]);
+                GLfloat angle = 20.0f * i;
+                model = glm::rotate(model, angle, glm::vec3(1.0f, 0.3f, 0.5f));
+                glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+            }
         glBindVertexArray(0);
 
+        /*
         //---
         // Lamp
         //---
@@ -286,6 +320,7 @@ int main()
         glBindVertexArray(lightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
         glBindVertexArray(0);
+        */
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
