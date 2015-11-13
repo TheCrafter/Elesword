@@ -1,0 +1,7 @@
+#ifndef ELESWORD_CONFIG_HPP
+#define ELESWORD_CONFIG_HPP
+
+#define SHADER_TEXTURE_DIFFUSE_PREFIX "texture_diffuse"
+#define SHADER_TEXTURE_SPECULAR_PREFIX "texture_specular"
+
+#endif //~ ELESWORD_CONFIG_HPP

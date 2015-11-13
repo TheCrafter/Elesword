@@ -6,8 +6,8 @@
 #include <iostream>
 #include <map>
 #include <vector>
-using namespace std;
 // GL Includes
+#define GLEW_STATIC
 #include <GL/glew.h> // Contains all the necessery OpenGL includes
 
 #pragma warning(push)
@@ -23,27 +23,27 @@ using namespace std;
 
 #include "Mesh.hpp"
 
-GLint TextureFromFile(const char* path, string directory);
+GLint TextureFromFile(const std::string& path, const std::string& directory);
 
 class Model
 {
 public:
-    /*  Functions   */
-    // Constructor, expects a filepath to a 3D model.
-    Model(GLchar* path);
+    /// Constructor, expects a filepath to a 3D model.
+    Model(const std::string& path);
 
-    // Draws the model, and thus all its meshes
+    /// Draws the model, and thus all its meshes
     void Draw(Shader shader);
 
 private:
-    /*  Model Data  */
-    vector<Mesh> meshes;
-    string directory;
-    vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    std::vector<Mesh> meshes;
+    std::string directory;
 
-    /*  Functions   */
+    // Stores all the textures loaded so far,
+    //optimization to make sure textures aren't loaded more than once.
+    std::vector<Texture> textures_loaded;	
+
     // Loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(string path);
+    void loadModel(const std::string& path);
 
     // Processes a node in a recursive fashion. Processes each individual mesh located at the node and repeats this process on its children nodes (if any).
     void processNode(aiNode* node, const aiScene* scene);
@@ -52,7 +52,5 @@ private:
 
     // Checks all material textures of a given type and loads the textures if they're not loaded yet.
     // The required info is returned as a Texture struct.
-    vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName);
+    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName);
 };
-
-GLint TextureFromFile(const char* path, string directory);

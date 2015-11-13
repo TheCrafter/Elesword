@@ -1,14 +1,15 @@
-#pragma once
+#ifndef ELESWORD_MESH_HPP
+#define ELESWORD_MESH_HPP
 
-// Std. Includes
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <vector>
-using namespace std;
-// GL Includes
-#include <GL/glew.h> // Contains all the necessery OpenGL includes
+#include <array>
+
+#define GLEW_STATIC
+#include <GL/glew.h>
 
 #pragma warning(push)
 #pragma warning(disable: 4201)
@@ -19,46 +20,50 @@ using namespace std;
 
 #include <assimp/postprocess.h>
 
-
+#include "Config.hpp"
 #include "Shader.hpp"
 
 struct Vertex
 {
-    // Position
     glm::vec3 Position;
-    // Normal
     glm::vec3 Normal;
-    // TexCoords
     glm::vec2 TexCoords;
 };
 
+enum class TextureType
+{
+    DIFFUSE = 0,
+    SPECULAR
+};
+const static std::array<std::string, sizeof(TextureType)> TextureTypeNames{{
+    SHADER_TEXTURE_DIFFUSE_PREFIX,
+    SHADER_TEXTURE_SPECULAR_PREFIX}};
+
 struct Texture
 {
-    GLuint id;
-    string type;
-    aiString path;
+    GLuint      id;
+    TextureType type;
+    aiString    path;
 };
 
 class Mesh
 {
 public:
-    /*  Mesh Data  */
-    vector<Vertex> vertices;
-    vector<GLuint> indices;
-    vector<Texture> textures;
+    std::vector<Vertex>  mVertices;
+    std::vector<GLuint>  mIndices;
+    std::vector<Texture> mTextures;
 
-    /*  Functions  */
     // Constructor
-    Mesh(vector<Vertex> vertices, vector<GLuint> indices, vector<Texture> textures);
+    Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
 
     // Render the mesh
     void Draw(Shader shader);
 
 private:
-    /*  Render data  */
     GLuint VAO, VBO, EBO;
 
-    /*  Functions    */
     // Initializes all the buffer objects/arrays
     void setupMesh();
-};
+}; //~ Mesh
+
+#endif //~ ELESWORD_MESH_HPP
