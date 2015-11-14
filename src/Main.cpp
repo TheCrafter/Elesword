@@ -81,9 +81,9 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     Shader lightingShader;
-    lightingShader.Init("res/Shader/Vertex/lighting.vs", "res/Shader/Fragment/lighting.frag");
+    lightingShader.Init("res/Shader/Vertex/lighting.vert", "res/Shader/Fragment/lighting.frag");
     Shader lampShader;
-    lampShader.Init("res/Shader/Vertex/lamp.vs", "res/Shader/Fragment/lamp.frag");
+    lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
     // Load models
     Model ourModel("res/Model/Nanosuit/nanosuit.obj");
