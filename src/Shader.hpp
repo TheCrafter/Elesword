@@ -12,7 +12,7 @@ public:
     void Init(const std::string& vertexPath, const std::string& fragmentPath);
 
     // Use the program
-    void Use();
+    void Use() const;
 
     GLuint GetProgID() const;
 

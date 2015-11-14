@@ -1,69 +1,48 @@
 #ifndef ELESWORD_MESH_HPP
 #define ELESWORD_MESH_HPP
 
-#include <string>
-#include <fstream>
-#include <sstream>
-#include <iostream>
 #include <vector>
-#include <array>
+#include "Shader.hpp"
 
+// GLEW
 #define GLEW_STATIC
 #include <GL/glew.h>
 
 #pragma warning(push)
-#pragma warning(disable: 4201)
+#pragma warning(disable:4201)
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #pragma warning(pop)
 
-
-#include <assimp/postprocess.h>
-
-#include "Config.hpp"
-#include "Shader.hpp"
-
-struct Vertex
+struct Vertice
 {
-    glm::vec3 Position;
-    glm::vec3 Normal;
-    glm::vec2 TexCoords;
-};
-
-enum class TextureType
-{
-    DIFFUSE = 0,
-    SPECULAR
-};
-const static std::array<std::string, sizeof(TextureType)> TextureTypeNames{{
-    SHADER_TEXTURE_DIFFUSE_PREFIX,
-    SHADER_TEXTURE_SPECULAR_PREFIX}};
-
-struct Texture
-{
-    GLuint      id;
-    TextureType type;
-    aiString    path;
+    glm::vec3 position;
+    glm::vec3 normal;
 };
 
 class Mesh
 {
 public:
-    std::vector<Vertex>  mVertices;
-    std::vector<GLuint>  mIndices;
-    std::vector<Texture> mTextures;
+    std::vector<glm::vec3> mPositions;
+    std::vector<glm::vec3> mNormals;
+    std::vector<glm::vec2> mTexCoords;
 
-    // Constructor
-    Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices, std::vector<Texture> textures);
+    // Destructor
+    ~Mesh();
 
-    // Render the mesh
-    void Draw(Shader shader);
+    // Sets vertex attribute pointers
+    void Setup();
+
+    // Draw triangles
+    void Draw(const Shader& shader);
 
 private:
-    GLuint VAO, VBO, EBO;
+    GLuint mVAO, // Vertex Array Object
+           mPBO, // Position Buffer Object
+           mNBO, // Normal   Buffer Object
+           mTBO; // Texture  Buffer Object
 
-    // Initializes all the buffer objects/arrays
-    void setupMesh();
 }; //~ Mesh
 
 #endif //~ ELESWORD_MESH_HPP

@@ -20,12 +20,11 @@
 
 #include "Shader.hpp"
 #include "Camera.hpp"
-#include "Model.hpp"
+#include "Mesh.hpp"
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void doMovement(GLfloat deltaTime);
-
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -85,10 +84,8 @@ int main()
     Shader lampShader;
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
-    // Load models
-    Model ourModel("res/Model/Nanosuit/nanosuit.obj");
-    // Used a lamp object here. Find one yourself on the internet, or create your own one ;) (or be oldschool and set the VBO and VAO yourselves)
-    //Model lightBulb("../../../Path/To/Lamps/Bulb.obj");
+    // Load model
+    //Model ourModel("res/Model/Nanosuit/nanosuit.obj");
 
     // Draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -147,21 +144,10 @@ int main()
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
     };
 
-    // Then, we set the light's VAO (VBO stays the same. After all, the vertices are the same for the light object (also a 3D cube))
-    GLuint VBO, lightVAO;
-    glGenBuffers(1, &VBO);
-    glGenVertexArrays(1, &lightVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glBindVertexArray(lightVAO);
-        // We only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need.
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        // Set the vertex attributes (only position data for the lamp))
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
-        glEnableVertexAttribArray(0);
-    glBindVertexArray(0);
+    Mesh lamp;
+    for(int i = 0; i < 288; i += 8)
+        lamp.mPositions.push_back(glm::vec3(vertices[i], vertices[i + 1], vertices[i + 2]));
+    lamp.Setup();
 
     GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
     GLfloat lastFrame = 0.0f;  	// Time of last frame
@@ -216,7 +202,7 @@ int main()
         model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
         model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
-        ourModel.Draw(lightingShader);
+        //ourModel.Draw(lightingShader);
 
         //---
         // Lamp
@@ -231,7 +217,6 @@ int main()
         glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 
         // Draw
-        glBindVertexArray(lightVAO);
         for(GLuint i = 0; i < 2; i++)
         {
             model = glm::mat4();
@@ -239,17 +224,13 @@ int main()
             model = glm::scale(model, glm::vec3(0.2f)); // Make it a smaller cube
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            lamp.Draw(lampShader);
         }
-        glBindVertexArray(0);
 
         // Swap the screen buffers
         glfwSwapBuffers(window);
     }
 
-    // Properly de-allocate all resources once they've outlived their purpose
-    glDeleteVertexArrays(1, &lightVAO);
-    glDeleteBuffers(1, &VBO);
     // Terminate GLFW, clearing any resources allocated by GLFW.
     glfwTerminate();
     return 0;
