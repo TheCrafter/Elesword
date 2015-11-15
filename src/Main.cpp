@@ -3,6 +3,8 @@
 #endif
 
 #include <iostream>
+#include <array>
+#include <vector>
 
 // GLEW
 #define GLEW_STATIC
@@ -21,6 +23,7 @@
 #include "Shader.hpp"
 #include "Camera.hpp"
 #include "Mesh.hpp"
+#include "Model.hpp"
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -35,6 +38,31 @@ glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
+
+GLint TextureFromFile(const std::string& path)
+{
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    // Load image
+    int width, height;
+    unsigned char* image = SOIL_load_image(path.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+
+    // Assign texture to ID
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    SOIL_free_image_data(image);
+    return textureID;
+}
 
 int main()
 {
@@ -84,9 +112,106 @@ int main()
     Shader lampShader;
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
+    //---------------------------------------------------------------------------------------------
     // Load model
     //Model ourModel("res/Model/Nanosuit/nanosuit.obj");
 
+    Model nanosuit("res/Model/Nanosuit/nanosuit.obj", TextureFromFile);
+
+    /*
+    Assimp::Importer importer;
+
+    const aiScene* scene = importer.ReadFile("res/Model/Nanosuit/nanosuit.obj",
+          aiProcess_CalcTangentSpace      |
+          aiProcess_Triangulate           |
+          aiProcess_JoinIdenticalVertices |
+          aiProcess_SortByPType);
+
+    // If the import failed, report it
+    if(!scene)
+    {
+        std::cout << "Scene failed to load: " << importer.GetErrorString() << std::endl;
+        return false;
+    }
+
+    std::vector<GLuint> vaos;
+    std::vector<size_t> sizes;
+    for(unsigned int i = 0; i < scene->mNumMeshes; i++)
+    {
+    aiMesh* curMesh = scene->mMeshes[i];
+    curMesh->mVertices;
+    GLuint VAO, VBO, NBO, TBO, EBO;
+
+    std::array<GLuint, 4> bufObjAr;
+    glGenBuffers((GLsizei)bufObjAr.size(), bufObjAr.data());
+    VBO = bufObjAr[0];
+    NBO = bufObjAr[1];
+    TBO = bufObjAr[2];
+    EBO = bufObjAr[3];
+
+    glGenVertexArrays(1, &VAO);
+    vaos.push_back(VAO);
+
+    glBindVertexArray(VAO);
+    {
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    {
+    glBufferData(
+    GL_ARRAY_BUFFER,
+    curMesh->mNumVertices * sizeof(aiVector3D),
+    curMesh->mVertices,
+    GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, NBO);
+    {
+    glBufferData(
+    GL_ARRAY_BUFFER,
+    curMesh->mNumVertices * sizeof(aiVector3D),
+    curMesh->mNormals,
+    GL_STATIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(1);
+    }
+
+    if(curMesh->mTextureCoords)
+    {
+    glBindBuffer(GL_ARRAY_BUFFER, TBO);
+    {
+    glBufferData(
+    GL_ARRAY_BUFFER,
+    curMesh->mNumVertices * sizeof(aiVector3D),
+    curMesh->mTextureCoords[0],
+    GL_STATIC_DRAW);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(2);
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    std::vector<GLuint> indices;
+    for(GLuint i = 0; i < curMesh->mNumFaces; i++)
+    {
+    aiFace face = curMesh->mFaces[i];
+    for(GLuint j = 0; j < face.mNumIndices; j++)
+    indices.push_back(face.mIndices[j]);
+    }
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices.data(), GL_STATIC_DRAW);
+
+    sizes.push_back(indices.size());
+    }
+    glBindVertexArray(0);
+
+    }
+    */
+
+    
+
+    //---------------------------------------------------------------------------------------------
     // Draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -202,7 +327,8 @@ int main()
         model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
         model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));	// It's a bit too big for our scene, so scale it down
         glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
-        //ourModel.Draw(lightingShader);
+
+        nanosuit.Draw(lightingShader);
 
         //---
         // Lamp
