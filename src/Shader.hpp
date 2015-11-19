@@ -20,6 +20,7 @@ public:
 private:
     // Program ID
     GLuint mProgramID;
-};
+
+}; //~ Shader
 
 #endif //~ ELESWORD_SHADER_HPP

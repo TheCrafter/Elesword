@@ -5,7 +5,6 @@
 
 #include <string>
 #include <vector>
-#include <array>
 #include <functional>
 #include <memory>
 
@@ -14,10 +13,6 @@ WARN_GUARD_ON
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 WARN_GUARD_OFF
-
-#include <assimp/Importer.hpp>      // C++ importer interface
-#include <assimp/scene.h>           // Output data structure
-#include <assimp/postprocess.h>     // Post processing flags
 
 #include "Config.hpp"
 #include "Shader.hpp"

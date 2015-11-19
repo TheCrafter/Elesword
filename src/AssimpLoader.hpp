@@ -14,7 +14,6 @@
 
 #include "Config.hpp"
 #include "Shader.hpp"
-#include "Model.hpp"
 
 enum class AssimpTextureType
 {

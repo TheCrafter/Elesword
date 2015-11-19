@@ -1,15 +1,15 @@
-#pragma once
+#ifndef ELESWORD_CAMERA_HPP
+#define ELESWORD_CAMERA_HPP
 
-// GLEW
+#include "WarnGuard.hpp"
+
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-// Glm
-#pragma warning(push)
-#pragma warning(disable:4201)
+WARN_GUARD_ON
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#pragma warning(pop)
+WARN_GUARD_OFF
 
 class Camera
 {
@@ -44,4 +44,7 @@ public:
 
     /// Rotates the camera based on an offset on x and y axis
     void RotateCamera(GLfloat xoffset, GLfloat yoffset);
-};
+
+}; //~ Camera
+
+#endif //~ ELESWORD_CAMERA_HPP

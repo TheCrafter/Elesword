@@ -1,19 +1,20 @@
 #ifndef ELESWORD_MESH_HPP
 #define ELESWORD_MESH_HPP
 
+#include "WarnGuard.hpp"
 #include <vector>
-#include "Shader.hpp"
 
 // GLEW
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-#pragma warning(push)
-#pragma warning(disable:4201)
+WARN_GUARD_ON
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#pragma warning(pop)
+WARN_GUARD_OFF
+
+#include "Shader.hpp"
 
 struct Vertice
 {
