@@ -1,0 +1,6 @@
+ProjectName: Elesword
+ProjectType: Executable
+Libraries:   [assimp, glfw, glew, soil]
+OSLibraries:
+  Windows: ["opengl32", "glu32", "ole32", "gdi32", "advapi32", "user32", "shell32"]
+  Linux:   []

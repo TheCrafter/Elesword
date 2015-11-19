@@ -83,6 +83,10 @@ ipch/
 # Untracked Files and Directories #
 ###################################
 
+# Output
+bin/
+tmp/
+
 # Libraries
 deps/
 
