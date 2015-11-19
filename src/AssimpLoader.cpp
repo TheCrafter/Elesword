@@ -1,18 +1,13 @@
-#include "Assimp.hpp"
+#include "AssimpLoader.hpp"
 #include <iostream>
 #include <SOIL.h>
 
 // Forward declarations
-std::vector<AssimpMesh>* LoadToGpu(const aiScene* scene, const std::string& filepath);
-GLint TextureFromFile(const std::string& path);
-std::vector<AssimpTexture> LoadMaterialTextures(
-    aiMaterial* mat,
-    aiTextureType type,
-    std::string typeName,
-    std::string assetRootDir,
-    std::vector<AssimpTexture> loadedTextures);
 
-void AssimpDraw(const Shader& shader, const std::vector<AssimpMesh>* meshes)
+
+GLint TextureFromFile(const std::string& path);
+
+void AssimpLoader::AssimpDraw(const Shader& shader, const std::vector<AssimpMesh>* meshes)
 {
     shader.Use();
 
@@ -72,7 +67,7 @@ void AssimpDraw(const Shader& shader, const std::vector<AssimpMesh>* meshes)
     }
 }
 
-std::vector<AssimpMesh>* AssimpLoad(const std::string& filepath)
+std::vector<AssimpLoader::AssimpMesh>* AssimpLoader::AssimpLoad(const std::string& filepath)
 {
     Assimp::Importer importer;
 
@@ -92,7 +87,7 @@ std::vector<AssimpMesh>* AssimpLoad(const std::string& filepath)
     return LoadToGpu(scene, filepath);
 }
 
-std::vector<AssimpMesh>* LoadToGpu(const aiScene* scene, const std::string& filepath)
+std::vector<AssimpLoader::AssimpMesh>* AssimpLoader::LoadToGpu(const aiScene* scene, const std::string& filepath)
 {
     std::vector<AssimpMesh>* meshVecPtr = new std::vector<AssimpMesh>();
     std::vector<AssimpTexture> loadedTextures;
@@ -207,7 +202,7 @@ std::vector<AssimpMesh>* LoadToGpu(const aiScene* scene, const std::string& file
     return meshVecPtr;
 }
 
-std::vector<AssimpTexture> LoadMaterialTextures(
+std::vector<AssimpTexture> AssimpLoader::LoadMaterialTextures(
     aiMaterial* mat,
     aiTextureType type,
     std::string typeName,

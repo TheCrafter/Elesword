@@ -25,7 +25,7 @@ WARN_GUARD_OFF
 #include "Camera.hpp"
 #include "Mesh.hpp"
 #include "Model.hpp"
-#include "Assimp.hpp"
+#include "AssimpLoader.hpp"
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -91,7 +91,10 @@ int main()
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
     // Load model
-    Model<AssimpMesh> nanosuit("res/Model/Nanosuit/nanosuit.obj", AssimpDraw, AssimpLoad);
+    Model<AssimpLoader::AssimpMesh> nanosuit(
+        "res/Model/Nanosuit/nanosuit.obj",
+        AssimpLoader::AssimpDraw,
+        AssimpLoader::AssimpLoad);
 
     // Draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
