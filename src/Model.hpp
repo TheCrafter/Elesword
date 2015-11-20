@@ -27,6 +27,12 @@ public:
     {
     }
 
+    // Destructor
+    ~Model()
+    {
+        glDeleteVertexArrays(1, &mVAO);
+    }
+
     // Loads the data, first in the containers and then sends it to GPU in one go
     void Load() { mLoader.LoadData(mFilepath, mVAO, mData, mMeshes, mIndices); };
 
