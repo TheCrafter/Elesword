@@ -22,8 +22,10 @@ class Model
 {
 public:
     // Constructor
-    Model(const std::string& filepath)
+    Model(const std::string& filepath, Loader loader = Loader(), Painter painter = Painter())
         : mFilepath(filepath)
+        , mLoader(loader)
+        , mPainter(painter)
     {
     }
 
@@ -39,7 +41,7 @@ public:
     // Use a Shader to draw meshes
     void Draw(const Shader& shader) const
     {
-        for(const AssimpMesh& mesh : mMeshes)
+        for(const MeshT& mesh : mMeshes)
             mPainter.DrawMesh(
                 shader, mVAO, mIndices.data() + mesh.indicesOffset, mesh);
     }
