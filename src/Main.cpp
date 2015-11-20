@@ -5,6 +5,7 @@
 #endif
 
 #include <iostream>
+#include <memory>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -88,9 +89,12 @@ int main()
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
     // Load model
-    Model<AssimpLoader, AssimpPainter, AssimpMesh> nanosuit("res/Model/Nanosuit/nanosuit.obj");
+    std::shared_ptr<AssimpLoader> assimpLoader = std::make_shared<AssimpLoader>();
+    std::shared_ptr<AssimpPainter> assimpPainter = std::make_shared<AssimpPainter>();
+    Model<AssimpLoader, AssimpPainter, AssimpMesh> nanosuit("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
     nanosuit.Load();
 
+    // Create vertices and indices for our cute cube lamp
     std::vector<GLfloat> lampVertices = {
         -0.5f, -0.5f,  0.5f,
          0.5f, -0.5f,  0.5f,
@@ -111,11 +115,12 @@ int main()
         1, 5, 6, 6, 2, 1
     };
 
-    SimpleLoader sLoader;
-    sLoader.GetVertices().insert(sLoader.GetVertices().end(), lampVertices.begin(), lampVertices.end());
-    sLoader.GetIndices().insert(sLoader.GetIndices().end(), lampIndices.begin(), lampIndices.end());
+    std::shared_ptr<SimpleLoader> sLoader = std::make_shared<SimpleLoader>();
+    std::shared_ptr<SimplePainter> sPainter = std::make_shared<SimplePainter>();
+    sLoader->GetVertices().insert(sLoader->GetVertices().end(), lampVertices.begin(), lampVertices.end());
+    sLoader->GetIndices().insert(sLoader->GetIndices().end(), lampIndices.begin(), lampIndices.end());
 
-    Model<SimpleLoader, SimplePainter, SimpleMesh> lamp("res/Model/Lamp/lamp.obj", sLoader);
+    Model<SimpleLoader, SimplePainter, SimpleMesh> lamp("res/Model/Lamp/lamp.obj", sLoader, sPainter);
     lamp.Load();
 
     // Draw in wireframe
