@@ -20,7 +20,6 @@ WARN_GUARD_OFF
 
 #include "Shader.hpp"
 #include "Camera.hpp"
-#include "Mesh.hpp"
 #include "Model.hpp"
 #include "AssimpLoader.hpp"
 #include "SimpleLoader.hpp"
