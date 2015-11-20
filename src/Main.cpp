@@ -87,10 +87,8 @@ int main()
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
     // Load model
-    Model<AssimpLoader::AssimpMesh> nanosuit(
-        "res/Model/Nanosuit/nanosuit.obj",
-        AssimpLoader::AssimpDraw,
-        AssimpLoader::AssimpLoad);
+    Model<AssimpLoader, AssimpPainter, AssimpMesh> nanosuit("res/Model/Nanosuit/nanosuit.obj");
+    nanosuit.Load();
 
     // Draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);

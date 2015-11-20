@@ -1,73 +1,35 @@
 #include "AssimpLoader.hpp"
 #include <iostream>
+
+#include <assimp/Importer.hpp>      // C++ importer interface
+#include <assimp/scene.h>           // Output data structure
+#include <assimp/postprocess.h>     // Post processing flags
+
 #include <SOIL.h>
 
-// Forward declarations
+#include "Config.hpp"
 
+//--------------------------------------------------
+// Declarations
+//--------------------------------------------------
+std::vector<Texture> SampleLoadMaterialTextures(
+    aiMaterial* mat,
+    aiTextureType type,
+    std::string typeName,
+    std::string assetRootDir,
+    std::vector<Texture>& loadedTextures);
 
-GLint TextureFromFile(const std::string& path);
+GLint SampleTextureFromFile(const std::string& path);
 
-void AssimpLoader::AssimpDraw(const Shader& shader, const std::vector<AssimpMesh>* meshes)
-{
-    shader.Use();
-
-    for(std::vector<AssimpMesh>::size_type i = 0; i < meshes->size(); i++)
-    {
-        // Bind appropriate textures
-        GLuint diffuseNr = 1;
-        GLuint specularNr = 1;
-
-        // Bind textures
-        for(std::vector<AssimpTexture>::size_type j = 0; j != (*meshes)[i].textures.size(); j++)
-        {
-            glActiveTexture(GL_TEXTURE0 + (GLuint)j);
-
-            // Retrieve texture number (the N in diffuse_textureN)
-            std::string number;
-            AssimpTextureType type = (*meshes)[i].textures[j].type;
-
-            // Transfer GLuint to stream
-            switch(type)
-            {
-                case AssimpTextureType::DIFFUSE:
-                    number += (char)diffuseNr++;
-                    break;
-
-                case AssimpTextureType::SPECULAR:
-                    number += (char)specularNr++;
-                    break;
-                default:
-                    break;
-            }
-
-            // Now set the sampler to the correct texture unit
-            glUniform1i(
-                glGetUniformLocation(shader.GetProgID(), ("material." + TextureTypeNames[(size_t)type] + number).c_str()),
-                (GLuint)j);
-
-            // And finally bind the texture
-            glBindTexture(GL_TEXTURE_2D, (*meshes)[i].textures[j].id);
-        }
-
-        // Also set each mesh's shininess property to a default value
-        // (if you want you could extend this to another mesh property and possibly change this value)
-        glUniform1f(glGetUniformLocation(shader.GetProgID(), "material.shininess"), 16.0f);
-
-        // Draw mesh
-        glBindVertexArray((*meshes)[i].VAO);
-        glDrawElements(GL_TRIANGLES, (GLsizei)(*meshes)[i].indices.size(), GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
-
-        // "Unbind" textures
-        for(std::vector<AssimpTexture>::size_type j = 0; j != (*meshes)[j].textures.size(); j++)
-        {
-            glActiveTexture(GL_TEXTURE0 + (GLuint)j);
-            glBindTexture(GL_TEXTURE_2D, 0);
-        }
-    }
-}
-
-std::vector<AssimpLoader::AssimpMesh>* AssimpLoader::AssimpLoad(const std::string& filepath)
+//--------------------------------------------------
+// AssimpLoader
+//--------------------------------------------------
+void AssimpLoader::LoadData(
+    const std::string& filepath,
+    GLuint& vao,
+    std::vector<GLfloat>& vData,
+    std::vector<AssimpMesh>& vMeshes,
+    std::vector<GLuint>& vIndices)
 {
     Assimp::Importer importer;
 
@@ -81,94 +43,74 @@ std::vector<AssimpLoader::AssimpMesh>* AssimpLoader::AssimpLoad(const std::strin
     if(!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-        return nullptr;
+        return;
     }
 
-    return LoadToGpu(scene, filepath);
-}
-
-std::vector<AssimpLoader::AssimpMesh>* AssimpLoader::LoadToGpu(const aiScene* scene, const std::string& filepath)
-{
-    std::vector<AssimpMesh>* meshVecPtr = new std::vector<AssimpMesh>();
-    std::vector<AssimpTexture> loadedTextures;
-
-    for(unsigned int i = 0; i < scene->mNumMeshes; i++)
+    // Put vertices to data
+    std::vector<Texture> loadedTextures;
+    for(unsigned int i = 0, offset = 0; i < scene->mNumMeshes; i++)
     {
+        aiMesh* curMesh = scene->mMeshes[i];
+
+        // Create new Mesh
         AssimpMesh newMesh;
 
-        aiMesh* mesh = scene->mMeshes[i];
+        // Update its info
+        newMesh.dataOffset = offset;
+        newMesh.indicesNum = 0;
 
-        std::array<GLuint, 4> bufObjAr;
-        glGenBuffers((GLsizei)bufObjAr.size(), bufObjAr.data());
-        GLuint VBO = bufObjAr[0], // Vertices
-               NBO = bufObjAr[1], // Normals
-               TBO = bufObjAr[2], // Textures
-               EBO = bufObjAr[3]; // Elements
+        // Update offset
+        offset += curMesh->mNumVertices;
 
-        glGenVertexArrays(1, &(newMesh.VAO));
-
-        glBindVertexArray(newMesh.VAO);
+        // Add Data to vData vector
+        for(unsigned int j = 0; j < curMesh->mNumVertices; j++)
         {
             // Vertices
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            {
-                glBufferData(
-                    GL_ARRAY_BUFFER,
-                    mesh->mNumVertices * sizeof(aiVector3D),
-                    mesh->mVertices,
-                    GL_STATIC_DRAW);
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0);
-                glEnableVertexAttribArray(0);
-            }
+            vData.push_back(curMesh->mVertices[j].x);
+            vData.push_back(curMesh->mVertices[j].y);
+            vData.push_back(curMesh->mVertices[j].z);
 
             // Normals
-            glBindBuffer(GL_ARRAY_BUFFER, NBO);
-            {
-                glBufferData(
-                    GL_ARRAY_BUFFER,
-                    mesh->mNumVertices * sizeof(aiVector3D),
-                    mesh->mNormals,
-                    GL_STATIC_DRAW);
-                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0);
-                glEnableVertexAttribArray(1);
-            }
+            vData.push_back(curMesh->mNormals[j].x);
+            vData.push_back(curMesh->mNormals[j].y);
+            vData.push_back(curMesh->mNormals[j].z);
 
-            // Texture Coordinates
-            if(mesh->mTextureCoords)
+            // TexCoords
+            if(curMesh->mTextureCoords)
             {
-                glBindBuffer(GL_ARRAY_BUFFER, TBO);
-                {
-                    glBufferData(
-                        GL_ARRAY_BUFFER,
-                        mesh->mNumVertices * sizeof(aiVector3D),
-                        mesh->mTextureCoords[0],
-                        GL_STATIC_DRAW);
-                    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
-                    glEnableVertexAttribArray(2);
-                }
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                vData.push_back(curMesh->mTextureCoords[0][j].x);
+                vData.push_back(curMesh->mTextureCoords[0][j].y);
+                vData.push_back(curMesh->mTextureCoords[0][j].z);
             }
-
-            // Indices
-            for(GLuint h = 0; h < mesh->mNumFaces; h++)
+            else
             {
-                aiFace* face = &(mesh->mFaces[h]);
-                for(GLuint j = 0; j < face->mNumIndices; j++)
-                    newMesh.indices.push_back(face->mIndices[j]);
+                // TODO: Handle that case
+                // vData.push_back(0);
+                // vData.push_back(0);
+                // vData.push_back(0);
             }
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, newMesh.indices.size() * sizeof(GLuint), newMesh.indices.data(), GL_STATIC_DRAW);;
         }
-        glBindVertexArray(0);
+
+        newMesh.indicesOffset = (unsigned int)vIndices.size();
+
+        // Add Indices to vector
+        for(GLuint h = 0; h < curMesh->mNumFaces; h++)
+        {
+            aiFace* face = &(curMesh->mFaces[h]);
+
+            for(GLuint j = 0; j < face->mNumIndices; j++)
+                vIndices.push_back(face->mIndices[j] + newMesh.dataOffset);
+
+            newMesh.indicesNum += face->mNumIndices;
+        }
 
         // Materials
-        if(mesh->mMaterialIndex >= 0)
+        if(curMesh->mMaterialIndex >= 0)
         {
-            aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+            aiMaterial* material = scene->mMaterials[curMesh->mMaterialIndex];
 
             // Diffuse maps
-            std::vector<AssimpTexture> diffuseMaps = LoadMaterialTextures(
+            std::vector<Texture> diffuseMaps = SampleLoadMaterialTextures(
                 material,
                 aiTextureType_DIFFUSE,
                 SHADER_TEXTURE_DIFFUSE_PREFIX,
@@ -176,40 +118,144 @@ std::vector<AssimpLoader::AssimpMesh>* AssimpLoader::LoadToGpu(const aiScene* sc
                 loadedTextures);
             newMesh.textures.insert(newMesh.textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
-            // newMesh.textures.push_back(LoadMaterialTextures(
-            //     material,
-            //     aiTextureType_DIFFUSE,
-            //     SHADER_TEXTURE_DIFFUSE_PREFIX,
-            //     mFilepath.substr(0, mFilepath.find_last_of('/')),
-            //     loadedTextures,
-            //     mLoadTextureFromFileCb));
-
             // Specular maps
-            std::vector<AssimpTexture> specularMaps = LoadMaterialTextures(
+            std::vector<Texture> specularMaps = SampleLoadMaterialTextures(
                 material,
                 aiTextureType_SPECULAR,
                 SHADER_TEXTURE_SPECULAR_PREFIX,
                 filepath.substr(0, filepath.find_last_of('/')),
                 loadedTextures);
-
             newMesh.textures.insert(newMesh.textures.end(), specularMaps.begin(), specularMaps.end());
-            //newMesh.textures.push_back();
         }
 
-        meshVecPtr->push_back(std::move(newMesh));
+        // Add new mesh to vector
+        vMeshes.push_back(newMesh);
     }
 
-    return meshVecPtr;
+    GLuint VBO, EBO;
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+    glGenVertexArrays(1, &vao);
+
+    glBindVertexArray(vao);
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        {
+            // Bind data
+            glBufferData(
+                GL_ARRAY_BUFFER,
+                vData.size() * sizeof(GLfloat),
+                vData.data(),
+                GL_STATIC_DRAW);
+
+            // Vertices
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)0);
+            glEnableVertexAttribArray(0);
+
+            // Normals
+            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)(3 * sizeof(GLfloat)));
+            glEnableVertexAttribArray(1);
+
+            // TexCoords
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (GLvoid*)(6 * sizeof(GLfloat)));
+            glEnableVertexAttribArray(2);
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(
+            GL_ELEMENT_ARRAY_BUFFER,
+            vIndices.size() * sizeof(GLuint),
+            vIndices.data(),
+            GL_STATIC_DRAW);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
+    glBindVertexArray(0);
 }
 
-std::vector<AssimpTexture> AssimpLoader::LoadMaterialTextures(
+//--------------------------------------------------
+// AssimpPainter
+//--------------------------------------------------
+void AssimpPainter::DrawMesh(
+    const Shader& shader,
+    GLuint vao,
+    const std::vector<GLuint>::value_type* indices,
+    const AssimpMesh& mesh) const
+{
+    shader.Use();
+
+    // Bind appropriate textures
+    GLuint diffuseNr = 1;
+    GLuint specularNr = 1;
+
+    // Bind textures
+    std::vector<Texture>::size_type index2 = 0;
+    for(Texture texture : mesh.textures)
+    {
+        glActiveTexture(GL_TEXTURE0 + (GLuint)index2);
+
+        // Retrieve texture number (the N in diffuse_textureN)
+        std::string number;
+        TextureType type = texture.type;
+
+        // Transfer GLuint to stream
+        switch(type)
+        {
+            case TextureType::DIFFUSE:
+                number += (char)diffuseNr++;
+                break;
+
+            case TextureType::SPECULAR:
+                number += (char)specularNr++;
+                break;
+            default:
+                break;
+        }
+
+        // Now set the sampler to the correct texture unit
+        glUniform1i(
+            glGetUniformLocation(shader.GetProgID(), ("material." + TextureTypeNames[(size_t)type] + number).c_str()),
+            (GLuint)index2);
+
+        // And finally bind the texture
+        glBindTexture(GL_TEXTURE_2D, texture.id);
+
+        index2++;
+    }
+
+    // Also set each mesh's shininess property to a default value
+    // (if you want you could extend this to another mesh property and possibly change this value)
+    glUniform1f(glGetUniformLocation(shader.GetProgID(), "material.shininess"), 16.0f);
+
+    // Draw mesh
+    glBindVertexArray(vao);
+    glDrawElements(
+        GL_TRIANGLES,
+        mesh.indicesNum,
+        GL_UNSIGNED_INT,
+        indices);
+    glBindVertexArray(0);
+
+    // "Unbind" textures
+    index2 = 0;
+    for(Texture texture : mesh.textures)
+    {
+        glActiveTexture(GL_TEXTURE0 + (GLuint)index2);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+}
+
+//--------------------------------------------------
+// Util
+//--------------------------------------------------
+std::vector<Texture> SampleLoadMaterialTextures(
     aiMaterial* mat,
     aiTextureType type,
     std::string typeName,
     std::string assetRootDir,
-    std::vector<AssimpTexture> loadedTextures)
+    std::vector<Texture>& loadedTextures)
 {
-    std::vector<AssimpTexture> textures;
+    std::vector<Texture> textures;
 
     for(GLuint i = 0; i < mat->GetTextureCount(type); i++)
     {
@@ -220,7 +266,7 @@ std::vector<AssimpTexture> AssimpLoader::LoadMaterialTextures(
         GLboolean skip = false;
         for(GLuint j = 0; j < loadedTextures.size(); j++)
         {
-            if(loadedTextures[j].path == path)
+            if(loadedTextures[j].path.compare(path.C_Str()) == 0)
             {
                 textures.push_back(loadedTextures[j]);
                 // A texture with the same filepath has already been loaded, continue to next one
@@ -235,13 +281,13 @@ std::vector<AssimpTexture> AssimpLoader::LoadMaterialTextures(
             // Retrieve absolute filepath
             std::string absPath(assetRootDir + '/' + path.C_Str());
 
-            AssimpTexture texture;
-            texture.id = TextureFromFile(absPath);
+            Texture texture;
+            texture.id = SampleTextureFromFile(absPath);
 
             auto it = std::find(TextureTypeNames.begin(), TextureTypeNames.end(), typeName);
-            texture.type = (AssimpTextureType)std::distance(TextureTypeNames.begin(), it);
+            texture.type = (TextureType)std::distance(TextureTypeNames.begin(), it);
 
-            texture.path = path;
+            texture.path = path.C_Str();
             textures.push_back(texture);
 
             // Store it as texture loaded for entire model, to ensure we won't unnecessary
@@ -253,7 +299,7 @@ std::vector<AssimpTexture> AssimpLoader::LoadMaterialTextures(
     return textures;
 }
 
-GLint TextureFromFile(const std::string& path)
+GLint SampleTextureFromFile(const std::string& path)
 {
     GLuint textureID;
     glGenTextures(1, &textureID);

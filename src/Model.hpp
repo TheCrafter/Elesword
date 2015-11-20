@@ -17,32 +17,37 @@ WARN_GUARD_OFF
 #include "Config.hpp"
 #include "Shader.hpp"
 
-template <typename MeshT>
+template <typename Loader, typename Painter, typename MeshT>
 class Model
 {
 public:
-    using DrawCb = std::function<void(const Shader& shader, const std::vector<MeshT>* meshes)>;
-    using LoadMeshesCb = std::function<std::vector<MeshT>*(const std::string& filepath)>;
-
     // Constructor
-    Model(const std::string& filepath, DrawCb dcb, LoadMeshesCb lmcb)
+    Model(const std::string& filepath)
         : mFilepath(filepath)
-        , mDrawCb(dcb)
-        , mMeshes(lmcb(filepath))
     {
     }
 
-    // Use Draw Cb to draw meshes
-    void Draw(const Shader& shader) { mDrawCb(shader, mMeshes.get()); }
+    // Loads the data, first in the containers and then sends it to GPU in one go
+    void Load() { mLoader.LoadData(mFilepath, mVAO, mData, mMeshes, mIndices); };
 
-    // Getters
-    const std::vector<MeshT>* GetMeshes() const { return mMeshes.get(); }
+    // Use a Shader to draw meshes
+    void Draw(const Shader& shader) const
+    {
+        for(const AssimpMesh& mesh : mMeshes)
+            mPainter.DrawMesh(
+                shader, mVAO, mIndices.data() + mesh.indicesOffset, mesh);
+    }
 
 private:
-    std::unique_ptr<std::vector<MeshT>> mMeshes;
-    std::string mFilepath;
+    std::vector<GLfloat> mData;     // Vertices, Normals, TexCoords in one vector
+    std::vector<MeshT>   mMeshes;   // Meshes for this model
+    std::vector<GLuint>  mIndices;  // Indicies for this model (for every mesh)
 
-    DrawCb mDrawCb;
+    GLuint mVAO;                    // Id for the VAO Load() used to upload data to GPU
+    std::string mFilepath;          // Filepath for this model's data
+
+    Loader mLoader;
+    Painter mPainter;
 
 }; //~ Model
 
