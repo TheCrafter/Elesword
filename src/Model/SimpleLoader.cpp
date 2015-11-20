@@ -7,7 +7,10 @@
 
 #include <SOIL.h>
 
-#include "Config.hpp"
+#include "../Config.hpp"
+
+namespace Model
+{
 
 //--------------------------------------------------
 // SimpleLoader
@@ -87,3 +90,5 @@ void SimplePainter::DrawMesh(
         indices);
     glBindVertexArray(0);
 }
+
+} //~ namespace Model
