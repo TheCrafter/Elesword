@@ -11,19 +11,11 @@ WARN_GUARD_ON
 #include <glm/gtc/matrix_transform.hpp>
 WARN_GUARD_OFF
 
+#include "Movement.hpp"
+
 class Camera
 {
 public:
-    enum class MoveDirection
-    {
-        M_UP,
-        M_DOWN,
-        M_RIGHT,
-        M_LEFT,
-        M_IN,
-        M_OUT
-    };
-
     glm::vec3 mCameraPos,
               mCameraFront,
               mCameraUp;
@@ -40,7 +32,7 @@ public:
     glm::mat4 GetView() const;
 
     /// Moves the camera to given direction by given distance
-    void MoveCamera(MoveDirection direction, GLfloat distance);
+    void MoveCamera(Movement::MoveDirection direction, GLfloat distance);
 
     /// Rotates the camera based on an offset on x and y axis
     void RotateCamera(GLfloat xoffset, GLfloat yoffset);

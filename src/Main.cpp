@@ -18,8 +18,9 @@ WARN_GUARD_ON
 #include <glm/gtc/type_ptr.hpp>
 WARN_GUARD_OFF
 
-#include "Shader.hpp"
 #include "Camera.hpp"
+#include "Movement.hpp"
+#include "Shader.hpp"
 #include "Model/Model.hpp"
 #include "Model/AssimpLoader.hpp"
 #include "Model/SimpleLoader.hpp"
@@ -110,13 +111,26 @@ inline void doMovement(GLfloat deltaTime)
     GLfloat cameraSpeed = 5.0f;
     GLfloat distance = cameraSpeed * deltaTime;
     if(keys[GLFW_KEY_W])
-        camera.MoveCamera(Camera::MoveDirection::M_IN, distance);
+        camera.MoveCamera(Movement::MoveDirection::In, distance);
     if(keys[GLFW_KEY_S])
-        camera.MoveCamera(Camera::MoveDirection::M_OUT, distance);
+        camera.MoveCamera(Movement::MoveDirection::Out, distance);
     if(keys[GLFW_KEY_A])
-        camera.MoveCamera(Camera::MoveDirection::M_LEFT, distance);
+        camera.MoveCamera(Movement::MoveDirection::Left, distance);
     if(keys[GLFW_KEY_D])
-        camera.MoveCamera(Camera::MoveDirection::M_RIGHT, distance);
+        camera.MoveCamera(Movement::MoveDirection::Right, distance);
+
+    GLfloat modelSpeed = 2.0f;
+    if(keys[GLFW_KEY_UP])
+        nanosuit->Move<Movement::MoveDirection::Up>(modelSpeed);
+
+    if(keys[GLFW_KEY_DOWN])
+        nanosuit->Move<Movement::MoveDirection::Down>(modelSpeed);
+
+    if(keys[GLFW_KEY_RIGHT])
+        nanosuit->Move<Movement::MoveDirection::Right>(modelSpeed);
+
+    if(keys[GLFW_KEY_LEFT])
+        nanosuit->Move<Movement::MoveDirection::Left>(modelSpeed);
 }
 
 GLFWwindow* CreateContext()
@@ -166,19 +180,6 @@ void Update(float deltaTime)
 
     // Camera
     view = camera.GetView();
-
-    // Models
-    nanosuit->Reset();
-    nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-    nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
-
-    lamp1->Reset();
-    lamp1->Translate(pointLightPositions[0]);   // Move it to its position
-    lamp1->Scale(glm::vec3(0.2f));              // Make it a smaller cube
-
-    lamp2->Reset();
-    lamp2->Translate(pointLightPositions[1]);   // Move it to its position
-    lamp2->Scale(glm::vec3(0.2f));              // Make it a smaller cube
 }
 
 void Render()
@@ -293,6 +294,15 @@ int main()
 
     GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
     GLfloat lastFrame = 0.0f;  	// Time of last frame
+
+    nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+    nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
+
+    lamp1->Translate(pointLightPositions[0]);   // Move it to its position
+    lamp1->Scale(glm::vec3(0.2f));              // Make it a smaller cube
+
+    lamp2->Translate(pointLightPositions[1]);   // Move it to its position
+    lamp2->Scale(glm::vec3(0.2f));              // Make it a smaller cube
 
     // Game loop
     while(!glfwWindowShouldClose(window))

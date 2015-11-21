@@ -15,6 +15,7 @@ WARN_GUARD_ON
 WARN_GUARD_OFF
 
 #include "../Config.hpp"
+#include "../Movement.hpp"
 #include "../Shader.hpp"
 
 template <typename Loader, typename Painter, typename MeshT>
@@ -54,6 +55,11 @@ public:
 
     void Scale(glm::vec3& svec) { mModelMat = glm::scale(mModelMat, svec); }
     void Scale(glm::vec3&& svec) { Scale(svec); }
+
+    // Actions
+    template <Movement::MoveDirection MD>
+    void Move(float distance)
+    { Movement::Move<MD, glm::mat4>(mModelMat, distance); }
 
     // Getters
     const glm::mat4& GetModelMat() { return mModelMat; }
