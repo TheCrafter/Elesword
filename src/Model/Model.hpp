@@ -17,9 +17,6 @@ WARN_GUARD_OFF
 #include "../Config.hpp"
 #include "../Shader.hpp"
 
-namespace Model
-{
-
 template <typename Loader, typename Painter, typename MeshT>
 class Model
 {
@@ -61,7 +58,5 @@ private:
     std::shared_ptr<Painter> mPainter;
 
 }; //~ Model
-
-} //~ namespace Model
 
 #endif //~ ELESWORD_MODEL_HPP

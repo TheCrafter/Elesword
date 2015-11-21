@@ -24,13 +24,6 @@ WARN_GUARD_OFF
 #include "Model/AssimpLoader.hpp"
 #include "Model/SimpleLoader.hpp"
 
-using Model::AssimpLoader;
-using Model::AssimpPainter;
-using Model::AssimpMesh;
-using Model::SimpleLoader;
-using Model::SimplePainter;
-using Model::SimpleMesh;
-
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void doMovement(GLfloat deltaTime);
@@ -97,7 +90,7 @@ int main()
     // Load models
     std::shared_ptr<AssimpLoader> assimpLoader = std::make_shared<AssimpLoader>();
     std::shared_ptr<AssimpPainter> assimpPainter = std::make_shared<AssimpPainter>();
-    Model::Model<AssimpLoader, AssimpPainter, AssimpMesh> nanosuit("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
+    Model<AssimpLoader, AssimpPainter, AssimpMesh> nanosuit("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
     nanosuit.Load();
 
     // Create vertices and indices for our cute cube lamp
@@ -126,7 +119,7 @@ int main()
     sLoader->GetVertices().insert(sLoader->GetVertices().end(), lampVertices.begin(), lampVertices.end());
     sLoader->GetIndices().insert(sLoader->GetIndices().end(), lampIndices.begin(), lampIndices.end());
 
-    Model::Model<SimpleLoader, SimplePainter, SimpleMesh> lamp("res/Model/Lamp/lamp.obj", sLoader, sPainter);
+    Model<SimpleLoader, SimplePainter, SimpleMesh> lamp("res/Model/Lamp/lamp.obj", sLoader, sPainter);
     lamp.Load();
 
     // Draw in wireframe

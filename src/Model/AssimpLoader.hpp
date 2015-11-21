@@ -10,9 +10,6 @@
 #include "../Shader.hpp"
 #include "../Texture.hpp"
 
-namespace Model
-{
-
 struct AssimpMesh
 {
     unsigned int dataOffset;        // Starting position in mData
@@ -44,7 +41,5 @@ public:
         const AssimpMesh& mesh) const;
 
 }; //~ AssimpPainter
-
-} //~ namespace Model
 
 #endif //~ ELESWORD_ASSIMPLOADER_HPP

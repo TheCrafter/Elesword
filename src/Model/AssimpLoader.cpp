@@ -9,9 +9,6 @@
 
 #include "../Config.hpp"
 
-namespace Model
-{
-
 //--------------------------------------------------
 // Declarations
 //--------------------------------------------------
@@ -329,5 +326,3 @@ GLint SampleTextureFromFile(const std::string& path)
     SOIL_free_image_data(image);
     return textureID;
 }
-
-} //~ namespace Model

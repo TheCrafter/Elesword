@@ -10,9 +10,6 @@
 #include "../Shader.hpp"
 #include "../Texture.hpp"
 
-namespace Model
-{
-
 struct SimpleMesh
 {
     unsigned int indicesOffset;     // Starting position in mIndices
@@ -50,7 +47,5 @@ public:
         const SimpleMesh& mesh) const;
 
 }; //~ AssimpPainter
-
-} //~ namespace Model
 
 #endif //~ ELESWORD_SIMPLELOADER_HPP
