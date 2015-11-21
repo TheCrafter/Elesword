@@ -35,27 +35,41 @@ GLsizei width = 800, height = 600;
 GLenum polygonMode = GL_FILL;
 
 // World
-glm::mat4 view,
-          proj = glm::perspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
-
-// Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-// Light attributes
-glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
-
-glm::vec3 pointLightPositions[] = {
-    glm::vec3(2.3f, -1.6f, -3.0f),
-    glm::vec3(-1.7f, 0.9f, 1.0f)
-};
+Camera* worldCam;
 
 // Shaders
 Shader lightingShader, lampShader;
 
 // Models
-std::unique_ptr<Model<AssimpLoader, AssimpPainter, AssimpMesh>> nanosuit;
-std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp1;
-std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp2;
+struct World
+{
+    // Camera
+    Camera camera;
+
+    // Models
+    std::unique_ptr<Model<AssimpLoader, AssimpPainter, AssimpMesh>> nanosuit;
+    std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp1;
+    std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp2;
+
+    // Other matrices
+    glm::mat4 view, proj;
+
+    // Light attributes
+    glm::vec3 lightPos;
+
+    std::array<glm::vec3, 2> pointLightPositions;
+
+    World()
+        : lightPos(1.2f, 1.0f, 2.0f)
+        , camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f))
+        , proj(glm::perspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 100.0f))
+    {
+        pointLightPositions[0] = glm::vec3(2.3f, -1.6f, -3.0f);
+        pointLightPositions[1] = glm::vec3(-1.7f, 0.9f, 1.0f);
+    }
+
+};
+
 
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
@@ -102,35 +116,35 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     lastX = (GLfloat)xpos;
     lastY = (GLfloat)ypos;
 
-    camera.RotateCamera(xoffset, yoffset);
+    worldCam->RotateCamera(xoffset, yoffset);
 }
 
-inline void doMovement(GLfloat deltaTime)
+inline void doMovement(World& world, GLfloat deltaTime)
 {
     // Camera controls
     GLfloat cameraSpeed = 5.0f;
     GLfloat distance = cameraSpeed * deltaTime;
     if(keys[GLFW_KEY_W])
-        camera.MoveCamera(Movement::MoveDirection::In, distance);
+        world.camera.MoveCamera(Movement::MoveDirection::In, distance);
     if(keys[GLFW_KEY_S])
-        camera.MoveCamera(Movement::MoveDirection::Out, distance);
+        world.camera.MoveCamera(Movement::MoveDirection::Out, distance);
     if(keys[GLFW_KEY_A])
-        camera.MoveCamera(Movement::MoveDirection::Left, distance);
+        world.camera.MoveCamera(Movement::MoveDirection::Left, distance);
     if(keys[GLFW_KEY_D])
-        camera.MoveCamera(Movement::MoveDirection::Right, distance);
+        world.camera.MoveCamera(Movement::MoveDirection::Right, distance);
 
     GLfloat modelSpeed = 2.0f;
     if(keys[GLFW_KEY_UP])
-        nanosuit->Move<Movement::MoveDirection::Up>(modelSpeed);
+        world.nanosuit->Move<Movement::MoveDirection::Up>(modelSpeed);
 
     if(keys[GLFW_KEY_DOWN])
-        nanosuit->Move<Movement::MoveDirection::Down>(modelSpeed);
+        world.nanosuit->Move<Movement::MoveDirection::Down>(modelSpeed);
 
     if(keys[GLFW_KEY_RIGHT])
-        nanosuit->Move<Movement::MoveDirection::Right>(modelSpeed);
+        world.nanosuit->Move<Movement::MoveDirection::Right>(modelSpeed);
 
     if(keys[GLFW_KEY_LEFT])
-        nanosuit->Move<Movement::MoveDirection::Left>(modelSpeed);
+        world.nanosuit->Move<Movement::MoveDirection::Left>(modelSpeed);
 }
 
 GLFWwindow* CreateContext()
@@ -173,29 +187,29 @@ GLFWwindow* CreateContext()
     return window;
 }
 
-void Update(float deltaTime)
+void Update(World& world, float deltaTime)
 {
     glfwPollEvents();
-    doMovement(deltaTime);
+    doMovement(world, deltaTime);
 
     // Camera
-    view = camera.GetView();
+    world.view = world.camera.GetView();
 }
 
-void Render()
+void Render(const World& world)
 {
     //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);     // blue(ish)
     glClearColor(0.12f, 0.12f, 0.12f, 1.0f);    // gray
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     lightingShader.Use();
-    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "projection"), 1, GL_FALSE, glm::value_ptr(proj));
-    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "view"), 1, GL_FALSE, glm::value_ptr(view));
+    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
+    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "view"), 1, GL_FALSE, glm::value_ptr(world.view));
 
     // Set the lighting uniforms
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "viewPos"), camera.mCameraPos.x, camera.mCameraPos.y, camera.mCameraPos.z);
+    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
     // Point light 1
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].position"), pointLightPositions[0].x, pointLightPositions[0].y, pointLightPositions[0].z);
+    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].position"), world.pointLightPositions[0].x, world.pointLightPositions[0].y, world.pointLightPositions[0].z);
     glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].ambient"), 0.05f, 0.05f, 0.05f);
     glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].diffuse"), 1.0f, 1.0f, 1.0f);
     glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].specular"), 1.0f, 1.0f, 1.0f);
@@ -203,7 +217,7 @@ void Render()
     glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].linear"), 0.009f);
     glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].quadratic"), 0.0032f);
     // Point light 2
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].position"), pointLightPositions[1].x, pointLightPositions[1].y, pointLightPositions[1].z);
+    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].position"), world.pointLightPositions[1].x, world.pointLightPositions[1].y, world.pointLightPositions[1].z);
     glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].ambient"), 0.05f, 0.05f, 0.05f);
     glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].diffuse"), 1.0f, 1.0f, 1.0f);
     glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].specular"), 1.0f, 1.0f, 1.0f);
@@ -212,8 +226,8 @@ void Render()
     glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].quadratic"), 0.0032f);
 
     // Draw the loaded model
-    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(nanosuit->GetModelMat()));
-    nanosuit->Draw(lightingShader);
+    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(world.nanosuit->GetModelMat()));
+    world.nanosuit->Draw(lightingShader);
 
     //---
     // Lamp
@@ -224,15 +238,15 @@ void Render()
           projLoc = glGetUniformLocation(lampShader.GetProgID(), "projection");
 
     // Pass matrices to shader (except model for now_
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
+    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world.view));
+    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(world.proj));
 
     // Draw Lamps
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(lamp1->GetModelMat()));
-    lamp1->Draw(lampShader);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world.lamp1->GetModelMat()));
+    world.lamp1->Draw(lampShader);
 
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(lamp2->GetModelMat()));
-    lamp2->Draw(lampShader);
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world.lamp2->GetModelMat()));
+    world.lamp2->Draw(lampShader);
 
     // Swap the screen buffers
     glfwSwapBuffers(window);
@@ -251,6 +265,9 @@ int main()
         return -1;
     }
 
+    World world;
+    worldCam = &world.camera;
+
     // Load shaders
     lightingShader.Init("res/Shader/Vertex/lighting.vert", "res/Shader/Fragment/lighting.frag");
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
@@ -258,8 +275,8 @@ int main()
     // Load models
     std::shared_ptr<AssimpLoader> assimpLoader = std::make_shared<AssimpLoader>();
     std::shared_ptr<AssimpPainter> assimpPainter = std::make_shared<AssimpPainter>();
-    nanosuit = std::make_unique<Model<AssimpLoader, AssimpPainter, AssimpMesh>>("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
-    nanosuit->Load();
+    world.nanosuit = std::make_unique<Model<AssimpLoader, AssimpPainter, AssimpMesh>>("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
+    world.nanosuit->Load();
 
     // Create vertices and indices for our cute cube lamp
     std::vector<GLfloat> lampVertices = {
@@ -287,22 +304,22 @@ int main()
     sLoader->GetVertices().insert(sLoader->GetVertices().end(), lampVertices.begin(), lampVertices.end());
     sLoader->GetIndices().insert(sLoader->GetIndices().end(), lampIndices.begin(), lampIndices.end());
 
-    lamp1 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
-    lamp2 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
-    lamp1->Load();
-    lamp2->Load();
+    world.lamp1 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
+    world.lamp2 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
+    world.lamp1->Load();
+    world.lamp2->Load();
 
     GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
     GLfloat lastFrame = 0.0f;  	// Time of last frame
 
-    nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-    nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
+    world.nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+    world.nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
 
-    lamp1->Translate(pointLightPositions[0]);   // Move it to its position
-    lamp1->Scale(glm::vec3(0.2f));              // Make it a smaller cube
+    world.lamp1->Translate(world.pointLightPositions[0]);   // Move it to its position
+    world.lamp1->Scale(glm::vec3(0.2f));              // Make it a smaller cube
 
-    lamp2->Translate(pointLightPositions[1]);   // Move it to its position
-    lamp2->Scale(glm::vec3(0.2f));              // Make it a smaller cube
+    world.lamp2->Translate(world.pointLightPositions[1]);   // Move it to its position
+    world.lamp2->Scale(glm::vec3(0.2f));              // Make it a smaller cube
 
     // Game loop
     while(!glfwWindowShouldClose(window))
@@ -311,8 +328,8 @@ int main()
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        Update(deltaTime);
-        Render();
+        Update(world, deltaTime);
+        Render(world);
     }
 
     // Terminate GLFW, clearing any resources allocated by GLFW.

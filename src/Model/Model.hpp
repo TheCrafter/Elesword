@@ -50,10 +50,10 @@ public:
     // Model operations
     void Reset() { mModelMat = glm::mat4(); }
 
-    void Translate(glm::vec3& tvec) { mModelMat = glm::translate(mModelMat, tvec); }
+    void Translate(const glm::vec3& tvec) { mModelMat = glm::translate(mModelMat, tvec); }
     void Translate(glm::vec3&& tvec) { Translate(tvec); }
 
-    void Scale(glm::vec3& svec) { mModelMat = glm::scale(mModelMat, svec); }
+    void Scale(const glm::vec3& svec) { mModelMat = glm::scale(mModelMat, svec); }
     void Scale(glm::vec3&& svec) { Scale(svec); }
 
     // Actions

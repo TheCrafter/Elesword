@@ -10,7 +10,6 @@ WARN_GUARD_OFF
 
 namespace Movement
 {
-
     enum class MoveDirection
     {
         Up,
