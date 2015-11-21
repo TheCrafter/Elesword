@@ -36,8 +36,6 @@ GLenum polygonMode = GL_FILL;
 // World
 glm::mat4 view,
           proj = glm::perspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 100.0f);
-glm::mat4 nanosuitModel;
-glm::mat4 lampModels[2];
 
 // Camera
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -55,7 +53,8 @@ Shader lightingShader, lampShader;
 
 // Models
 std::unique_ptr<Model<AssimpLoader, AssimpPainter, AssimpMesh>> nanosuit;
-std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp;
+std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp1;
+std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp2;
 
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
@@ -105,7 +104,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     camera.RotateCamera(xoffset, yoffset);
 }
 
-void doMovement(GLfloat deltaTime)
+inline void doMovement(GLfloat deltaTime)
 {
     // Camera controls
     GLfloat cameraSpeed = 5.0f;
@@ -169,16 +168,17 @@ void Update(float deltaTime)
     view = camera.GetView();
 
     // Models
-    nanosuitModel = glm::mat4();
-    nanosuitModel = glm::translate(nanosuitModel, glm::vec3(0.0f, -1.75f, 0.0f));   // Translate it down a bit so it's at the center of the scene
-    nanosuitModel = glm::scale(nanosuitModel, glm::vec3(0.2f, 0.2f, 0.2f));	        // It's a bit too big for our scene, so scale it down
+    nanosuit->Reset();
+    nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+    nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
 
-    for(GLuint i = 0; i < 2; i++)
-    {
-        lampModels[i] = glm::mat4();
-        lampModels[i] = glm::translate(lampModels[i], pointLightPositions[i]);  // Move it to its position
-        lampModels[i] = glm::scale(lampModels[i], glm::vec3(0.2f));             // Make it a smaller cube
-    }
+    lamp1->Reset();
+    lamp1->Translate(pointLightPositions[0]);   // Move it to its position
+    lamp1->Scale(glm::vec3(0.2f));              // Make it a smaller cube
+
+    lamp2->Reset();
+    lamp2->Translate(pointLightPositions[1]);   // Move it to its position
+    lamp2->Scale(glm::vec3(0.2f));              // Make it a smaller cube
 }
 
 void Render()
@@ -211,7 +211,7 @@ void Render()
     glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].quadratic"), 0.0032f);
 
     // Draw the loaded model
-    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(nanosuitModel));
+    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(nanosuit->GetModelMat()));
     nanosuit->Draw(lightingShader);
 
     //---
@@ -226,12 +226,12 @@ void Render()
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(proj));
 
-    // Draw
-    for(GLuint i = 0; i < 2; i++)
-    {
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(lampModels[i]));
-        lamp->Draw(lampShader);
-    }
+    // Draw Lamps
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(lamp1->GetModelMat()));
+    lamp1->Draw(lampShader);
+
+    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(lamp2->GetModelMat()));
+    lamp2->Draw(lampShader);
 
     // Swap the screen buffers
     glfwSwapBuffers(window);
@@ -286,8 +286,10 @@ int main()
     sLoader->GetVertices().insert(sLoader->GetVertices().end(), lampVertices.begin(), lampVertices.end());
     sLoader->GetIndices().insert(sLoader->GetIndices().end(), lampIndices.begin(), lampIndices.end());
 
-    lamp = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
-    lamp->Load();
+    lamp1 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
+    lamp2 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
+    lamp1->Load();
+    lamp2->Load();
 
     GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
     GLfloat lastFrame = 0.0f;  	// Time of last frame

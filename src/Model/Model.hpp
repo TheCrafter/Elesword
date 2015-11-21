@@ -46,6 +46,18 @@ public:
                 shader, mVAO, mIndices.data() + mesh.indicesOffset, mesh);
     }
 
+    // Model operations
+    void Reset() { mModelMat = glm::mat4(); }
+
+    void Translate(glm::vec3& tvec) { mModelMat = glm::translate(mModelMat, tvec); }
+    void Translate(glm::vec3&& tvec) { Translate(tvec); }
+
+    void Scale(glm::vec3& svec) { mModelMat = glm::scale(mModelMat, svec); }
+    void Scale(glm::vec3&& svec) { Scale(svec); }
+
+    // Getters
+    const glm::mat4& GetModelMat() { return mModelMat; }
+
 private:
     std::vector<GLfloat> mData;     // Vertices, Normals, TexCoords in one vector
     std::vector<MeshT>   mMeshes;   // Meshes for this model
@@ -56,6 +68,8 @@ private:
 
     std::shared_ptr<Loader>  mLoader;
     std::shared_ptr<Painter> mPainter;
+
+    glm::mat4 mModelMat;
 
 }; //~ Model
 
