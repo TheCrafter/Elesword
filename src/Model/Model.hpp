@@ -1,7 +1,7 @@
 #ifndef ELESWORD_MODEL_HPP
 #define ELESWORD_MODEL_HPP
 
-#include "WarnGuard.hpp"
+#include "../Util/WarnGuard.hpp"
 
 #include <string>
 #include <vector>

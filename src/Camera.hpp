@@ -1,7 +1,7 @@
 #ifndef ELESWORD_CAMERA_HPP
 #define ELESWORD_CAMERA_HPP
 
-#include "WarnGuard.hpp"
+#include "Util/WarnGuard.hpp"
 
 #define GLEW_STATIC
 #include <GL/glew.h>
