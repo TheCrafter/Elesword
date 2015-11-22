@@ -16,7 +16,7 @@ WARN_GUARD_OFF
 
 #include "../Config.hpp"
 #include "../Movement.hpp"
-#include "../Shader.hpp"
+#include "../Render/Shader.hpp"
 
 template <typename Loader, typename Painter, typename MeshT>
 class Model

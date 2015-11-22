@@ -7,7 +7,7 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-#include "../Shader.hpp"
+#include "../Render/Shader.hpp"
 #include "../Texture.hpp"
 
 struct SimpleMesh

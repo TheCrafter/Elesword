@@ -7,8 +7,8 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 
-#include "../Shader.hpp"
 #include "../Texture.hpp"
+#include "../Render/Shader.hpp"
 
 struct AssimpMesh
 {

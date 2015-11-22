@@ -20,10 +20,10 @@ WARN_GUARD_OFF
 
 #include "Camera.hpp"
 #include "Movement.hpp"
-#include "Shader.hpp"
 #include "Model/Model.hpp"
 #include "Model/AssimpLoader.hpp"
 #include "Model/SimpleLoader.hpp"
+#include "Render/Shader.hpp"
 
 //-----------------------------------------------------
 // Data
