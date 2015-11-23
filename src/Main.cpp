@@ -23,6 +23,7 @@ WARN_GUARD_OFF
 #include "Model/Model.hpp"
 #include "Model/AssimpLoader.hpp"
 #include "Model/SimpleLoader.hpp"
+#include "Render/Light.hpp"
 #include "Render/Shader.hpp"
 
 //-----------------------------------------------------
@@ -55,17 +56,29 @@ struct World
     glm::mat4 view, proj;
 
     // Light attributes
-    glm::vec3 lightPos;
-
-    std::array<glm::vec3, 2> pointLightPositions;
+    PointLight pointLights[2];
 
     World()
-        : lightPos(1.2f, 1.0f, 2.0f)
-        , camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f))
+        : camera(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f))
         , proj(glm::perspective(45.0f, (GLfloat)width / (GLfloat)height, 0.1f, 100.0f))
     {
-        pointLightPositions[0] = glm::vec3(2.3f, -1.6f, -3.0f);
-        pointLightPositions[1] = glm::vec3(-1.7f, 0.9f, 1.0f);
+        // Set first light
+        pointLights[0].attr.position  = glm::vec3(2.3f, -1.6f, -3.0f);
+        pointLights[0].ambient        = glm::vec3(0.05f, 0.05f, 0.05f);
+        pointLights[0].diffuse        = glm::vec3(1.0f,  1.0f,  1.0);
+        pointLights[0].specular       = glm::vec3(1.0f,  1.0f,  1.0);
+        pointLights[0].attr.constant  = 1.0f;
+        pointLights[0].attr.linear    = 0.009f;
+        pointLights[0].attr.quadratic = 0.0032f;
+
+        // Set second light
+        pointLights[1].attr.position  = glm::vec3(-1.7f, 0.9f, 1.0f);
+        pointLights[1].ambient        = glm::vec3(0.05f, 0.05f, 0.05f);
+        pointLights[1].diffuse        = glm::vec3(1.0f,  1.0f,  1.0);
+        pointLights[1].specular       = glm::vec3(1.0f,  1.0f,  1.0);
+        pointLights[1].attr.constant  = 1.0f;
+        pointLights[1].attr.linear    = 0.009f;
+        pointLights[1].attr.quadratic = 0.0032f;
     }
 
 };
@@ -198,44 +211,36 @@ void Update(World& world, float deltaTime)
 
 void Render(const World& world)
 {
+    GLuint curShaderId;
+
     //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);     // blue(ish)
     glClearColor(0.12f, 0.12f, 0.12f, 1.0f);    // gray
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     lightingShader.Use();
-    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
-    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "view"), 1, GL_FALSE, glm::value_ptr(world.view));
+    curShaderId = lightingShader.GetProgID();
+    glUniformMatrix4fv(glGetUniformLocation(curShaderId, "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
+    glUniformMatrix4fv(glGetUniformLocation(curShaderId, "view"), 1, GL_FALSE, glm::value_ptr(world.view));
 
     // Set the lighting uniforms
     glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
-    // Point light 1
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].position"), world.pointLightPositions[0].x, world.pointLightPositions[0].y, world.pointLightPositions[0].z);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].ambient"), 0.05f, 0.05f, 0.05f);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].diffuse"), 1.0f, 1.0f, 1.0f);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].specular"), 1.0f, 1.0f, 1.0f);
-    glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].constant"), 1.0f);
-    glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].linear"), 0.009f);
-    glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[0].quadratic"), 0.0032f);
-    // Point light 2
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].position"), world.pointLightPositions[1].x, world.pointLightPositions[1].y, world.pointLightPositions[1].z);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].ambient"), 0.05f, 0.05f, 0.05f);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].diffuse"), 1.0f, 1.0f, 1.0f);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].specular"), 1.0f, 1.0f, 1.0f);
-    glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].constant"), 1.0f);
-    glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].linear"), 0.009f);
-    glUniform1f(glGetUniformLocation(lightingShader.GetProgID(), "pointLights[1].quadratic"), 0.0032f);
+
+    // Load point lights to GPU
+    LoadLight<PointLight>(curShaderId, world.pointLights[0], "pointLights[0]");
+    LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
 
     // Draw the loaded model
-    glUniformMatrix4fv(glGetUniformLocation(lightingShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(world.nanosuit->GetModelMat()));
+    glUniformMatrix4fv(glGetUniformLocation(curShaderId, "model"), 1, GL_FALSE, glm::value_ptr(world.nanosuit->GetModelMat()));
     world.nanosuit->Draw(lightingShader);
 
     //---
     // Lamp
     //---
     lampShader.Use();
-    GLint modelLoc = glGetUniformLocation(lampShader.GetProgID(), "model"),
-          viewLoc = glGetUniformLocation(lampShader.GetProgID(), "view"),
-          projLoc = glGetUniformLocation(lampShader.GetProgID(), "projection");
+    curShaderId = lampShader.GetProgID();
+    GLint modelLoc = glGetUniformLocation(curShaderId, "model"),
+          viewLoc  = glGetUniformLocation(curShaderId, "view"),
+          projLoc  = glGetUniformLocation(curShaderId, "projection");
 
     // Pass matrices to shader (except model for now_
     glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world.view));
@@ -315,11 +320,11 @@ int main()
     world.nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
     world.nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
 
-    world.lamp1->Translate(world.pointLightPositions[0]);   // Move it to its position
-    world.lamp1->Scale(glm::vec3(0.2f));              // Make it a smaller cube
+    world.lamp1->Translate(world.pointLights[0].attr.position);   // Move it to its position
+    world.lamp1->Scale(glm::vec3(0.2f));                          // Make it a smaller cube
 
-    world.lamp2->Translate(world.pointLightPositions[1]);   // Move it to its position
-    world.lamp2->Scale(glm::vec3(0.2f));              // Make it a smaller cube
+    world.lamp2->Translate(world.pointLights[1].attr.position);   // Move it to its position
+    world.lamp2->Scale(glm::vec3(0.2f));                          // Make it a smaller cube
 
     // Game loop
     while(!glfwWindowShouldClose(window))
