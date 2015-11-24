@@ -16,19 +16,16 @@ void SimpleLoader::LoadData(
     const std::string& filepath,
     GLuint& vao,
     std::vector<GLfloat>& vData,
-    std::vector<SimpleMesh>& vMeshes,
-    std::vector<GLuint>& vIndices)
+    std::vector<SimpleMesh>& vMeshes)
 {
     // Unused parameters
     (void)filepath;
 
-    // Load data (mVertices and mIndices should be filled already)
+    // Load data (mVertices should be filled already)
     vData.insert(vData.end(), mVertices.begin(), mVertices.end());
-    vIndices.insert(vIndices.end(), mIndices.begin(), mIndices.end());
 
     SimpleMesh newMesh;
-    newMesh.indicesOffset = 0;
-    newMesh.indicesNum = (unsigned int)mIndices.size();
+    newMesh.indices.insert(newMesh.indices.begin(), mIndices.begin(), mIndices.end());
     vMeshes.push_back(newMesh);
 
     GLuint VBO, EBO;
@@ -53,13 +50,17 @@ void SimpleLoader::LoadData(
         }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(
-            GL_ELEMENT_ARRAY_BUFFER,
-            vIndices.size() * sizeof(GLuint),
-            vIndices.data(),
-            GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        for(SimpleMesh& mesh : vMeshes)
+        {
+            glGenBuffers(1, &mesh.ebo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+            glBufferData(
+                GL_ELEMENT_ARRAY_BUFFER,
+                mesh.indices.size() * sizeof(GLuint),
+                mesh.indices.data(),
+                GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        }
     }
     glBindVertexArray(0);
 }
@@ -73,17 +74,18 @@ std::vector<GLuint>& SimpleLoader::GetIndices() { return mIndices; }
 void SimplePainter::DrawMesh(
     const Shader& shader,
     GLuint vao,
-    const std::vector<GLuint>::value_type* indices,
     const SimpleMesh& mesh) const
 {
     shader.Use();
 
     // Draw mesh
     glBindVertexArray(vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
     glDrawElements(
         GL_TRIANGLES,
-        mesh.indicesNum,
+        (GLsizei)mesh.indices.size(),
         GL_UNSIGNED_INT,
-        indices);
+        0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 }

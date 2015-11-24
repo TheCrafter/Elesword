@@ -28,8 +28,7 @@ void AssimpLoader::LoadData(
     const std::string& filepath,
     GLuint& vao,
     std::vector<GLfloat>& vData,
-    std::vector<AssimpMesh>& vMeshes,
-    std::vector<GLuint>& vIndices)
+    std::vector<AssimpMesh>& vMeshes)
 {
     Assimp::Importer importer;
 
@@ -57,7 +56,6 @@ void AssimpLoader::LoadData(
 
         // Update its info
         newMesh.dataOffset = offset;
-        newMesh.indicesNum = 0;
 
         // Update offset
         offset += curMesh->mNumVertices;
@@ -91,17 +89,13 @@ void AssimpLoader::LoadData(
             }
         }
 
-        newMesh.indicesOffset = (unsigned int)vIndices.size();
-
         // Add Indices to vector
         for(GLuint h = 0; h < curMesh->mNumFaces; h++)
         {
             aiFace* face = &(curMesh->mFaces[h]);
 
             for(GLuint j = 0; j < face->mNumIndices; j++)
-                vIndices.push_back(face->mIndices[j] + newMesh.dataOffset);
-
-            newMesh.indicesNum += face->mNumIndices;
+                newMesh.indices.push_back(face->mIndices[j] + newMesh.dataOffset);
         }
 
         // Materials
@@ -132,9 +126,9 @@ void AssimpLoader::LoadData(
         vMeshes.push_back(newMesh);
     }
 
-    GLuint VBO, EBO;
+    // Load to gpu
+    GLuint VBO;
     glGenBuffers(1, &VBO);
-    glGenBuffers(1, &EBO);
     glGenVertexArrays(1, &vao);
 
     glBindVertexArray(vao);
@@ -162,18 +156,21 @@ void AssimpLoader::LoadData(
         }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(
-            GL_ELEMENT_ARRAY_BUFFER,
-            vIndices.size() * sizeof(GLuint),
-            vIndices.data(),
-            GL_STATIC_DRAW);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        for(AssimpMesh& mesh : vMeshes)
+        {
+            glGenBuffers(1, &mesh.ebo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
+            glBufferData(
+                GL_ELEMENT_ARRAY_BUFFER,
+                mesh.indices.size() * sizeof(GLuint),
+                mesh.indices.data(),
+                GL_STATIC_DRAW);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        }
     }
     glBindVertexArray(0);
 
     glDeleteBuffers(1, &VBO);
-    glDeleteBuffers(1, &EBO);
 }
 
 //--------------------------------------------------
@@ -182,7 +179,6 @@ void AssimpLoader::LoadData(
 void AssimpPainter::DrawMesh(
     const Shader& shader,
     GLuint vao,
-    const std::vector<GLuint>::value_type* indices,
     const AssimpMesh& mesh) const
 {
     shader.Use();
@@ -232,11 +228,13 @@ void AssimpPainter::DrawMesh(
 
     // Draw mesh
     glBindVertexArray(vao);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
     glDrawElements(
         GL_TRIANGLES,
-        mesh.indicesNum,
+        (GLsizei)mesh.indices.size(),
         GL_UNSIGNED_INT,
-        indices);
+        0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     // "Unbind" textures

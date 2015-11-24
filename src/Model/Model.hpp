@@ -34,10 +34,19 @@ public:
     }
 
     // Destructor
-    ~Model() { glDeleteVertexArrays(1, &mVAO); }
+    ~Model()
+    {
+        std::vector<GLuint> meshEBOs;
+        for(MeshT mesh : mMeshes)
+            meshEBOs.push_back(mesh.ebo);
+
+        glDeleteBuffers((GLsizei)meshEBOs.size(), meshEBOs.data());
+
+        glDeleteVertexArrays(1, &mVAO);
+    }
 
     // Loads the data, first in the containers and then sends it to GPU in one go
-    void Load() { mLoader->LoadData(mFilepath, mVAO, mData, mMeshes, mIndices); }
+    void Load() { mLoader->LoadData(mFilepath, mVAO, mData, mMeshes); }
 
     // Use a Shader to draw meshes
     void Draw(const Shader& shader) const
@@ -48,7 +57,7 @@ public:
         // Draw meshes
         for(const MeshT& mesh : mMeshes)
             mPainter->DrawMesh(
-                shader, mVAO, mIndices.data() + mesh.indicesOffset, mesh);
+                shader, mVAO, mesh);
     }
 
     // Model operations
@@ -71,7 +80,6 @@ public:
 private:
     std::vector<GLfloat> mData;     // Vertices, Normals, TexCoords in one vector
     std::vector<MeshT>   mMeshes;   // Meshes for this model
-    std::vector<GLuint>  mIndices;  // Indicies for this model (for every mesh)
 
     GLuint mVAO;                    // Id for the VAO Load() used to upload data to GPU
     std::string mFilepath;          // Filepath for this model's data

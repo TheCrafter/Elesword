@@ -12,8 +12,8 @@
 
 struct SimpleMesh
 {
-    unsigned int indicesOffset;     // Starting position in mIndices
-    unsigned int indicesNum;        // Number of indices for this mesh
+    GLuint ebo;                     // EBO for this mesh
+    std::vector<GLuint> indices;    // Indices of this mesh
 
 }; //~ AssimpMesh
 
@@ -24,8 +24,7 @@ public:
         const std::string& filepath,
         GLuint& vao,
         std::vector<GLfloat>& vData,
-        std::vector<SimpleMesh>& vMeshes,
-        std::vector<GLuint>& vIndices);
+        std::vector<SimpleMesh>& vMeshes);
 
     // Getters
     std::vector<GLfloat>& GetVertices();
@@ -43,7 +42,6 @@ public:
     void DrawMesh(
         const Shader& shader,
         GLuint vao,
-        const std::vector<GLuint>::value_type* indices,
         const SimpleMesh& mesh) const;
 
 }; //~ AssimpPainter

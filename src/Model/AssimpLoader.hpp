@@ -12,10 +12,10 @@
 
 struct AssimpMesh
 {
-    unsigned int dataOffset;        // Starting position in mData
-    unsigned int indicesOffset;     // Starting position in mIndices
-    unsigned int indicesNum;        // Number of indices for this mesh
+    GLuint ebo;                     // EBO for this mesh
+    std::vector<GLuint> indices;    // Indices of this mesh
     std::vector<Texture> textures;  // Textures of this mesh
+    unsigned int dataOffset;        // Starting position in mData
 
 }; //~ AssimpMesh
 
@@ -26,8 +26,7 @@ public:
         const std::string& filepath,
         GLuint& vao,
         std::vector<GLfloat>& vData,
-        std::vector<AssimpMesh>& vMeshes,
-        std::vector<GLuint>& vIndices);
+        std::vector<AssimpMesh>& vMeshes);
 
 }; //~ AssimpLoader
 
@@ -37,7 +36,6 @@ public:
     void DrawMesh(
         const Shader& shader,
         GLuint vao,
-        const std::vector<GLuint>::value_type* indices,
         const AssimpMesh& mesh) const;
 
 }; //~ AssimpPainter
