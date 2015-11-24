@@ -42,6 +42,10 @@ public:
     // Use a Shader to draw meshes
     void Draw(const Shader& shader) const
     {
+        // Load model matrix to GPU
+        glUniformMatrix4fv(glGetUniformLocation(shader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(mModelMat));
+
+        // Draw meshes
         for(const MeshT& mesh : mMeshes)
             mPainter->DrawMesh(
                 shader, mVAO, mIndices.data() + mesh.indicesOffset, mesh);

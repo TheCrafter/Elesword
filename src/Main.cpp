@@ -230,7 +230,6 @@ void Render(const World& world)
     LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
 
     // Draw the loaded model
-    glUniformMatrix4fv(glGetUniformLocation(curShaderId, "model"), 1, GL_FALSE, glm::value_ptr(world.nanosuit->GetModelMat()));
     world.nanosuit->Draw(lightingShader);
 
     //---
@@ -238,8 +237,7 @@ void Render(const World& world)
     //---
     lampShader.Use();
     curShaderId = lampShader.GetProgID();
-    GLint modelLoc = glGetUniformLocation(curShaderId, "model"),
-          viewLoc  = glGetUniformLocation(curShaderId, "view"),
+    GLint viewLoc  = glGetUniformLocation(curShaderId, "view"),
           projLoc  = glGetUniformLocation(curShaderId, "projection");
 
     // Pass matrices to shader (except model for now_
@@ -247,10 +245,7 @@ void Render(const World& world)
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(world.proj));
 
     // Draw Lamps
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world.lamp1->GetModelMat()));
     world.lamp1->Draw(lampShader);
-
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world.lamp2->GetModelMat()));
     world.lamp2->Draw(lampShader);
 
     // Swap the screen buffers
