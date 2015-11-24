@@ -66,6 +66,9 @@ void LoadLight(GLuint shaderId, const LightType& light, const std::string& glslU
     LoadLightSpecific<LightType>(shaderId, light, glslUniformName);
 }
 
+// TODO: See if that works in GCC/LLVM
+// I declared LoadLightSpecific here but I use it in LoadLight. In MSVC everything's fine
+// but in GCC/LLVM it **should** not work. I need to find out before fixing it
 template <typename LightType>
 void LoadLightSpecific(GLuint shaderId, const LightType& light, const std::string& glslUniformName);
 
