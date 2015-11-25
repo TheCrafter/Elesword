@@ -30,90 +30,61 @@ public:
         const std::shared_ptr<Painter>&);
     */
 
-    // Named constructor
+    /// Named constructor
     static std::unique_ptr<Model> CreateModel(
         const std::string& filepath,
         const std::shared_ptr<Loader>& loader,
-        const std::shared_ptr<Painter>& painter)
-    {
-        return std::unique_ptr<Model>(new Model(filepath, loader, painter));
-        //return std::make_unique<Model>(filepath, loader, painter); // Needs std::make_unique to be a friend
-    }
+        const std::shared_ptr<Painter>& painter);
 
-    static void Load(std::unique_ptr<Model>& model)
-    {
-        if(!model->mLoader->LoadData(mFilepath, mVAO, mData, mMeshes))
-            model.reset();
-    }
+    /// Loads the data, first in the containers and then sends it to GPU in one go
+    /// If it fails it resets the unique_ptr
+    void Load(std::unique_ptr<Model>& model);
 
-    // Destructor
-    ~Model()
-    {
-        std::vector<GLuint> meshEBOs;
-        for(MeshT mesh : mMeshes)
-            meshEBOs.push_back(mesh.ebo);
+    /// Destructor
+    ~Model();
 
-        glDeleteBuffers((GLsizei)meshEBOs.size(), meshEBOs.data());
+    /// Use a Shader to draw meshes
+    void Draw(const Shader& shader) const;
 
-        glDeleteVertexArrays(1, &mVAO);
-    }
+    /// Resets the Model's model matrix
+    void Reset();
 
-    // Loads the data, first in the containers and then sends it to GPU in one go
-    void Load() { mLoader->LoadData(mFilepath, mVAO, mData, mMeshes); }
+    /// Translates the Model with a given vec3
+    void Translate(const glm::vec3& tvec);
+    void Translate(glm::vec3&& tvec);
 
-    // Use a Shader to draw meshes
-    void Draw(const Shader& shader) const
-    {
-        // Load model matrix to GPU
-        glUniformMatrix4fv(glGetUniformLocation(shader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(mModelMat));
+    /// Scales the Model with a given vec3
+    void Scale(const glm::vec3& svec);
+    void Scale(glm::vec3&& svec);
 
-        // Draw meshes
-        for(const MeshT& mesh : mMeshes)
-            mPainter->DrawMesh(
-                shader, mVAO, mesh);
-    }
-
-    // Model operations
-    void Reset() { mModelMat = glm::mat4(); }
-
-    void Translate(const glm::vec3& tvec) { mModelMat = glm::translate(mModelMat, tvec); }
-    void Translate(glm::vec3&& tvec) { Translate(tvec); }
-
-    void Scale(const glm::vec3& svec) { mModelMat = glm::scale(mModelMat, svec); }
-    void Scale(glm::vec3&& svec) { Scale(svec); }
-
-    // Actions
+    /// Moves the Model on given direction for given distance
     template <Movement::MoveDirection MD>
-    void Move(float distance)
-    { Movement::Move<MD, glm::mat4>(mModelMat, distance); }
+    void Move(float distance);
 
-    // Getters
-    const glm::mat4& GetModelMat() { return mModelMat; }
+    /// Retrieves the Model's model matrix
+    const glm::mat4& GetModelMat();
 
 protected:
-    // Constructor
+    /// Constructor
     Model(
         const std::string& filepath,
         const std::shared_ptr<Loader>& loader,
-        const std::shared_ptr<Painter>& painter)
-        : mFilepath(filepath)
-        , mLoader(loader)
-        , mPainter(painter)
-    {
-    }
+        const std::shared_ptr<Painter>& painter);
 
 private:
-    std::vector<GLfloat> mData;     // Vertices, Normals, TexCoords in one vector
-    std::vector<MeshT>   mMeshes;   // Meshes for this model
+    std::vector<GLfloat> mData;     /// Vertices, Normals, TexCoords in one vector
+    std::vector<MeshT>   mMeshes;   /// Meshes for this model
 
-    GLuint mVAO;                    // Id for the VAO Load() used to upload data to GPU
-    std::string mFilepath;          // Filepath for this model's data
+    GLuint mVAO;                    /// Id for the VAO Load() used to upload data to GPU
+    std::string mFilepath;          /// Filepath for this model's data
 
-    std::shared_ptr<Loader>  mLoader;
-    std::shared_ptr<Painter> mPainter;
+    std::shared_ptr<Loader>  mLoader;   /// Loader of this Model
+    std::shared_ptr<Painter> mPainter;  /// Painter of this Model
 
     glm::mat4 mModelMat;
 
 }; //~ Model
+
+#include "Model.inl"
 
 #endif //~ ELESWORD_MODEL_HPP

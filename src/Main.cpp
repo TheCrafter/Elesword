@@ -26,6 +26,9 @@ WARN_GUARD_OFF
 #include "Render/Light.hpp"
 #include "Render/Shader.hpp"
 
+using AssimpModel = Model<AssimpLoader, AssimpPainter, AssimpMesh>;
+using SimpleModel = Model<SimpleLoader, SimplePainter, SimpleMesh>;
+
 //-----------------------------------------------------
 // Data
 //-----------------------------------------------------
@@ -48,9 +51,9 @@ struct World
     Camera camera;
 
     // Models
-    std::unique_ptr<Model<AssimpLoader, AssimpPainter, AssimpMesh>> nanosuit;
-    std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp1;
-    std::unique_ptr<Model<SimpleLoader, SimplePainter, SimpleMesh>> lamp2;
+    std::unique_ptr<AssimpModel> nanosuit;
+    std::unique_ptr<SimpleModel> lamp1;
+    std::unique_ptr<SimpleModel> lamp2;
 
     // Other matrices
     glm::mat4 view, proj;
@@ -275,8 +278,8 @@ int main()
     // Load models
     std::shared_ptr<AssimpLoader> assimpLoader = std::make_shared<AssimpLoader>();
     std::shared_ptr<AssimpPainter> assimpPainter = std::make_shared<AssimpPainter>();
-    world.nanosuit = Model<AssimpLoader, AssimpPainter, AssimpMesh>::CreateModel("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
-    world.nanosuit->Load();
+    world.nanosuit = AssimpModel::CreateModel("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
+    world.nanosuit->Load(world.nanosuit);
 
     // Create vertices and indices for our cute cube lamp
     std::vector<GLfloat> lampVertices = {
@@ -306,8 +309,8 @@ int main()
 
     world.lamp1 = Model<SimpleLoader, SimplePainter, SimpleMesh>::CreateModel("res/Model/Lamp/lamp.obj", sLoader, sPainter);
     world.lamp2 = Model<SimpleLoader, SimplePainter, SimpleMesh>::CreateModel("res/Model/Lamp/lamp.obj", sLoader, sPainter);
-    world.lamp1->Load();
-    world.lamp2->Load();
+    world.lamp1->Load(world.lamp1);
+    world.lamp2->Load(world.lamp2);
 
     GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
     GLfloat lastFrame = 0.0f;  	// Time of last frame
