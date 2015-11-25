@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <memory>
+#include <functional>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -24,8 +25,6 @@ WARN_GUARD_OFF
 #include "Model/AssimpLoader.hpp"
 #include "Render/Light.hpp"
 #include "Render/Shader.hpp"
-
-using AssimpModel = Model<AssimpLoader, AssimpPainter, AssimpMesh>;
 
 //-----------------------------------------------------
 // Data
@@ -49,7 +48,7 @@ struct World
     Camera camera;
 
     // Models
-    std::unique_ptr<AssimpModel> nanosuit, lamp1, lamp2;
+    std::unique_ptr<Model> nanosuit, lamp1, lamp2;
 
     // Other matrices
     glm::mat4 view, proj;
@@ -229,7 +228,7 @@ void Render(const World& world)
     LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
 
     // Draw the loaded model
-    world.nanosuit->Draw(lightingShader);
+    world.nanosuit->Render(lightingShader);
 
     //---
     // Lamp
@@ -244,8 +243,8 @@ void Render(const World& world)
     glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(world.proj));
 
     // Draw Lamps
-    world.lamp1->Draw(lampShader);
-    world.lamp2->Draw(lampShader);
+    world.lamp1->Render(lampShader);
+    world.lamp2->Render(lampShader);
 
     // Swap the screen buffers
     glfwSwapBuffers(window);
@@ -272,11 +271,28 @@ int main()
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
     // Create Models
-    std::shared_ptr<AssimpLoader> assimpLoader = std::make_shared<AssimpLoader>();
-    std::shared_ptr<AssimpPainter> assimpPainter = std::make_shared<AssimpPainter>();
-    world.nanosuit = AssimpModel::CreateModel("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
-    world.lamp1 = AssimpModel::CreateModel("res/Model/Lamp/lamp.obj", assimpLoader, assimpPainter);
-    world.lamp2 = AssimpModel::CreateModel("res/Model/Lamp/lamp.obj", assimpLoader, assimpPainter);
+    std::unique_ptr<AssimpLoader> assimpLoader = std::make_unique<AssimpLoader>();
+    std::unique_ptr<AssimpPainter> assimpPainter = std::make_unique<AssimpPainter>();
+
+    Model::LoadCb lcb = std::bind(
+        &AssimpLoader::LoadData,
+        assimpLoader.get(),
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3,
+        std::placeholders::_4,
+        std::placeholders::_5);
+
+    Model::RenderMeshCb rmcb = std::bind(
+        &AssimpPainter::DrawMesh,
+        assimpPainter.get(),
+        std::placeholders::_1,
+        std::placeholders::_2,
+        std::placeholders::_3);
+
+    world.nanosuit = Model::CreateModel("res/Model/Nanosuit/nanosuit.obj", lcb, rmcb);
+    world.lamp1 = Model::CreateModel("res/Model/Lamp/lamp.obj", lcb, rmcb);
+    world.lamp2 = Model::CreateModel("res/Model/Lamp/lamp.obj", lcb, rmcb);
 
     // Load models
     world.nanosuit->Load(world.nanosuit);

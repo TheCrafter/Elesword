@@ -27,8 +27,9 @@ GLint SampleTextureFromFile(const std::string& path);
 bool AssimpLoader::LoadData(
     const std::string& filepath,
     GLuint& vao,
+    GLuint& vbo,
     std::vector<GLfloat>& vData,
-    std::vector<AssimpMesh>& vMeshes)
+    std::vector<Mesh>& vMeshes)
 {
     Assimp::Importer importer;
 
@@ -54,7 +55,7 @@ bool AssimpLoader::LoadData(
         aiMesh* curMesh = scene->mMeshes[i];
 
         // Create new Mesh
-        AssimpMesh newMesh;
+        Mesh newMesh;
 
         // Update its info
         newMesh.dataOffset = offset;
@@ -129,13 +130,12 @@ bool AssimpLoader::LoadData(
     }
 
     // Load to gpu
-    GLuint VBO;
-    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &vbo);
     glGenVertexArrays(1, &vao);
 
     glBindVertexArray(vao);
     {
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
         {
             // Bind data
             glBufferData(
@@ -158,7 +158,7 @@ bool AssimpLoader::LoadData(
         }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        for(AssimpMesh& mesh : vMeshes)
+        for(Mesh& mesh : vMeshes)
         {
             glGenBuffers(1, &mesh.ebo);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
@@ -172,7 +172,6 @@ bool AssimpLoader::LoadData(
     }
     glBindVertexArray(0);
 
-    glDeleteBuffers(1, &VBO);
     return true;
 }
 
@@ -182,7 +181,7 @@ bool AssimpLoader::LoadData(
 void AssimpPainter::DrawMesh(
     const Shader& shader,
     GLuint vao,
-    const AssimpMesh& mesh) const
+    const Mesh& mesh) const
 {
     shader.Use();
 

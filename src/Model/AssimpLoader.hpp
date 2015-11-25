@@ -9,15 +9,7 @@
 
 #include "../Texture.hpp"
 #include "../Render/Shader.hpp"
-
-struct AssimpMesh
-{
-    GLuint ebo;                     // EBO for this mesh
-    std::vector<GLuint> indices;    // Indices of this mesh
-    std::vector<Texture> textures;  // Textures of this mesh
-    unsigned int dataOffset;        // Starting position in mData
-
-}; //~ AssimpMesh
+#include "Model.hpp"
 
 class AssimpLoader
 {
@@ -25,8 +17,9 @@ public:
     bool LoadData(
         const std::string& filepath,
         GLuint& vao,
+        GLuint& vbo,
         std::vector<GLfloat>& vData,
-        std::vector<AssimpMesh>& vMeshes);
+        std::vector<Mesh>& vMeshes);
 
 }; //~ AssimpLoader
 
@@ -36,7 +29,7 @@ public:
     void DrawMesh(
         const Shader& shader,
         GLuint vao,
-        const AssimpMesh& mesh) const;
+        const Mesh& mesh) const;
 
 }; //~ AssimpPainter
 

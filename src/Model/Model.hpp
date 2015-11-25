@@ -17,11 +17,37 @@ WARN_GUARD_OFF
 #include "../Config.hpp"
 #include "../Movement.hpp"
 #include "../Render/Shader.hpp"
+#include "../Texture.hpp"
 
-template <typename Loader, typename Painter, typename MeshT>
+/// Mesh class to bundle a mesh's properties
+struct Mesh
+{
+    GLuint ebo;                     /// EBO for this mesh
+    GLuint vbo;                     /// VBO for this mesh
+    std::vector<GLuint> indices;    /// Indices of this mesh
+    std::vector<Texture> textures;  /// Textures of this mesh
+    unsigned int dataOffset;        /// Starting position in mData
+
+    /// Constructor
+    Mesh();
+
+}; //~ Mesh
+
 class Model
 {
 public:
+    using LoadCb = std::function<bool(
+        const std::string&,     // Filepath of model
+        GLuint&,                // Model's vao
+        GLuint&,                // Model's vbo
+        std::vector<GLfloat>&,  // Model's data
+        std::vector<Mesh>&)>;   // Model's meshes
+
+    using RenderMeshCb = std::function<void(
+        const Shader& shader,
+        GLuint vao,
+        const Mesh& mesh)>;
+
     /* The section below is to declare std::make_unique as a friend function.
        Doesnt seem to work on MSVC :(
     friend std::unique_ptr<Model> std::make_unique<Model>(
@@ -31,20 +57,17 @@ public:
     */
 
     /// Named constructor
-    static std::unique_ptr<Model> CreateModel(
-        const std::string& filepath,
-        const std::shared_ptr<Loader>& loader,
-        const std::shared_ptr<Painter>& painter);
+    static std::unique_ptr<Model> CreateModel(const std::string& filepath, LoadCb load, RenderMeshCb renderMesh);
+
+    /// Destructor
+    ~Model();
 
     /// Loads the data, first in the containers and then sends it to GPU in one go
     /// If it fails it resets the unique_ptr
     void Load(std::unique_ptr<Model>& model);
 
-    /// Destructor
-    ~Model();
-
     /// Use a Shader to draw meshes
-    void Draw(const Shader& shader) const;
+    void Render(const Shader& shader) const;
 
     /// Resets the Model's model matrix
     void Reset();
@@ -69,25 +92,27 @@ public:
 
 protected:
     /// Constructor
-    Model(
-        const std::string& filepath,
-        const std::shared_ptr<Loader>& loader,
-        const std::shared_ptr<Painter>& painter);
+    Model(const std::string& filepath, LoadCb load, RenderMeshCb renderMesh);
 
 private:
-    std::vector<GLfloat> mData;     /// Vertices, Normals, TexCoords in one vector
-    std::vector<MeshT>   mMeshes;   /// Meshes for this model
+    std::vector<GLfloat> mData;   /// Vertices, Normals, TexCoords in one vector
+    std::vector<Mesh>    mMeshes; /// Meshes for this model
 
-    GLuint mVAO;                    /// Id for the VAO Load() used to upload data to GPU
-    std::string mFilepath;          /// Filepath for this model's data
+    GLuint mVAO,                  /// Ids for the VAO and VOB Load() used to upload data to GPU
+           mVBO;
+    std::string mFilepath;        /// Filepath for this model's data
 
-    std::shared_ptr<Loader>  mLoader;   /// Loader of this Model
-    std::shared_ptr<Painter> mPainter;  /// Painter of this Model
+    LoadCb       mLoad;           /// Callback to a function to load this model
+    RenderMeshCb mRenderMesh;     /// Callback to a function to render a mesh
 
-    glm::mat4 mModelMat;
+    glm::mat4 mModelMat;          /// Model 4x4 matrix for this model
 
 }; //~ Model
 
-#include "Model.inl"
+template <Movement::MoveDirection MD>
+void Model::Move(float distance)
+{
+    Movement::Move<MD, glm::mat4>(mModelMat, distance);
+}
 
 #endif //~ ELESWORD_MODEL_HPP
