@@ -33,11 +33,13 @@ bool AssimpLoader::LoadData(
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(filepath,
-                                             aiProcess_CalcTangentSpace |
+                                             aiProcess_GenNormals            |
+                                             aiProcess_CalcTangentSpace      |
                                              aiProcess_JoinIdenticalVertices |
-                                             aiProcess_SortByPType |
-                                             aiProcess_Triangulate |
-                                             aiProcess_FlipUVs);
+                                             //aiProcess_SortByPType           |
+                                             aiProcess_Triangulate           |
+                                             aiProcess_FlipUVs
+                                             );
 
     if(!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
@@ -74,7 +76,7 @@ bool AssimpLoader::LoadData(
             vData.push_back(curMesh->mNormals[j].z);
 
             // TexCoords
-            if(curMesh->mTextureCoords)
+            if(curMesh->HasTextureCoords(0))
             {
                 vData.push_back(curMesh->mTextureCoords[0][j].x);
                 vData.push_back(curMesh->mTextureCoords[0][j].y);

@@ -22,12 +22,10 @@ WARN_GUARD_OFF
 #include "Movement.hpp"
 #include "Model/Model.hpp"
 #include "Model/AssimpLoader.hpp"
-#include "Model/SimpleLoader.hpp"
 #include "Render/Light.hpp"
 #include "Render/Shader.hpp"
 
 using AssimpModel = Model<AssimpLoader, AssimpPainter, AssimpMesh>;
-using SimpleModel = Model<SimpleLoader, SimplePainter, SimpleMesh>;
 
 //-----------------------------------------------------
 // Data
@@ -51,9 +49,7 @@ struct World
     Camera camera;
 
     // Models
-    std::unique_ptr<AssimpModel> nanosuit;
-    std::unique_ptr<SimpleModel> lamp1;
-    std::unique_ptr<SimpleModel> lamp2;
+    std::unique_ptr<AssimpModel> nanosuit, lamp1, lamp2;
 
     // Other matrices
     glm::mat4 view, proj;
@@ -275,40 +271,15 @@ int main()
     lightingShader.Init("res/Shader/Vertex/lighting.vert", "res/Shader/Fragment/lighting.frag");
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
 
-    // Load models
+    // Create Models
     std::shared_ptr<AssimpLoader> assimpLoader = std::make_shared<AssimpLoader>();
     std::shared_ptr<AssimpPainter> assimpPainter = std::make_shared<AssimpPainter>();
     world.nanosuit = AssimpModel::CreateModel("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
+    world.lamp1 = AssimpModel::CreateModel("res/Model/Lamp/lamp.obj", assimpLoader, assimpPainter);
+    world.lamp2 = AssimpModel::CreateModel("res/Model/Lamp/lamp.obj", assimpLoader, assimpPainter);
+
+    // Load models
     world.nanosuit->Load(world.nanosuit);
-
-    // Create vertices and indices for our cute cube lamp
-    std::vector<GLfloat> lampVertices = {
-        -0.5f, -0.5f,  0.5f,
-         0.5f, -0.5f,  0.5f,
-         0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f,  0.5f,
-        -0.5f, -0.5f, -0.5f,
-         0.5f, -0.5f, -0.5f,
-         0.5f,  0.5f, -0.5f,
-        -0.5f,  0.5f, -0.5f
-    };
-
-    std::vector<GLuint> lampIndices = {
-        0, 1, 2, 2, 3, 0,
-        3, 2, 6, 6, 7, 3,
-        7, 6, 5, 5, 4, 7,
-        4, 0, 3, 3, 7, 4,
-        0, 1, 5, 5, 4, 0,
-        1, 5, 6, 6, 2, 1
-    };
-
-    std::shared_ptr<SimpleLoader> sLoader = std::make_shared<SimpleLoader>();
-    std::shared_ptr<SimplePainter> sPainter = std::make_shared<SimplePainter>();
-    sLoader->GetVertices().insert(sLoader->GetVertices().end(), lampVertices.begin(), lampVertices.end());
-    sLoader->GetIndices().insert(sLoader->GetIndices().end(), lampIndices.begin(), lampIndices.end());
-
-    world.lamp1 = Model<SimpleLoader, SimplePainter, SimpleMesh>::CreateModel("res/Model/Lamp/lamp.obj", sLoader, sPainter);
-    world.lamp2 = Model<SimpleLoader, SimplePainter, SimpleMesh>::CreateModel("res/Model/Lamp/lamp.obj", sLoader, sPainter);
     world.lamp1->Load(world.lamp1);
     world.lamp2->Load(world.lamp2);
 
