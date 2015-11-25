@@ -20,7 +20,7 @@ struct SimpleMesh
 class SimpleLoader
 {
 public:
-    void LoadData(
+    bool LoadData(
         const std::string& filepath,
         GLuint& vao,
         std::vector<GLfloat>& vData,

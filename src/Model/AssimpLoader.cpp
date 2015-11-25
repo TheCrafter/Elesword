@@ -24,7 +24,7 @@ GLint SampleTextureFromFile(const std::string& path);
 //--------------------------------------------------
 // AssimpLoader
 //--------------------------------------------------
-void AssimpLoader::LoadData(
+bool AssimpLoader::LoadData(
     const std::string& filepath,
     GLuint& vao,
     std::vector<GLfloat>& vData,
@@ -42,7 +42,7 @@ void AssimpLoader::LoadData(
     if(!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
     {
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
-        return;
+        return false;
     }
 
     // Put vertices to data
@@ -171,6 +171,7 @@ void AssimpLoader::LoadData(
     glBindVertexArray(0);
 
     glDeleteBuffers(1, &VBO);
+    return true;
 }
 
 //--------------------------------------------------

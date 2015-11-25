@@ -22,15 +22,28 @@ template <typename Loader, typename Painter, typename MeshT>
 class Model
 {
 public:
-    // Constructor
-    Model(
+    /* The section below is to declare std::make_unique as a friend function.
+       Doesnt seem to work on MSVC :(
+    friend std::unique_ptr<Model> std::make_unique<Model>(
+        const std::string&,
+        const std::shared_ptr<Loader>&,
+        const std::shared_ptr<Painter>&);
+    */
+
+    // Named constructor
+    static std::unique_ptr<Model> CreateModel(
         const std::string& filepath,
         const std::shared_ptr<Loader>& loader,
         const std::shared_ptr<Painter>& painter)
-        : mFilepath(filepath)
-        , mLoader(loader)
-        , mPainter(painter)
     {
+        return std::unique_ptr<Model>(new Model(filepath, loader, painter));
+        //return std::make_unique<Model>(filepath, loader, painter); // Needs std::make_unique to be a friend
+    }
+
+    static void Load(std::unique_ptr<Model>& model)
+    {
+        if(!model->mLoader->LoadData(mFilepath, mVAO, mData, mMeshes))
+            model.reset();
     }
 
     // Destructor
@@ -76,6 +89,18 @@ public:
 
     // Getters
     const glm::mat4& GetModelMat() { return mModelMat; }
+
+protected:
+    // Constructor
+    Model(
+        const std::string& filepath,
+        const std::shared_ptr<Loader>& loader,
+        const std::shared_ptr<Painter>& painter)
+        : mFilepath(filepath)
+        , mLoader(loader)
+        , mPainter(painter)
+    {
+    }
 
 private:
     std::vector<GLfloat> mData;     // Vertices, Normals, TexCoords in one vector

@@ -12,7 +12,7 @@
 //--------------------------------------------------
 // SimpleLoader
 //--------------------------------------------------
-void SimpleLoader::LoadData(
+bool SimpleLoader::LoadData(
     const std::string& filepath,
     GLuint& vao,
     std::vector<GLfloat>& vData,
@@ -63,6 +63,8 @@ void SimpleLoader::LoadData(
         }
     }
     glBindVertexArray(0);
+
+    return true;
 }
 
 std::vector<GLfloat>& SimpleLoader::GetVertices() { return mVertices; }

@@ -275,7 +275,7 @@ int main()
     // Load models
     std::shared_ptr<AssimpLoader> assimpLoader = std::make_shared<AssimpLoader>();
     std::shared_ptr<AssimpPainter> assimpPainter = std::make_shared<AssimpPainter>();
-    world.nanosuit = std::make_unique<Model<AssimpLoader, AssimpPainter, AssimpMesh>>("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
+    world.nanosuit = Model<AssimpLoader, AssimpPainter, AssimpMesh>::CreateModel("res/Model/Nanosuit/nanosuit.obj", assimpLoader, assimpPainter);
     world.nanosuit->Load();
 
     // Create vertices and indices for our cute cube lamp
@@ -304,8 +304,8 @@ int main()
     sLoader->GetVertices().insert(sLoader->GetVertices().end(), lampVertices.begin(), lampVertices.end());
     sLoader->GetIndices().insert(sLoader->GetIndices().end(), lampIndices.begin(), lampIndices.end());
 
-    world.lamp1 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
-    world.lamp2 = std::make_unique<Model<SimpleLoader, SimplePainter, SimpleMesh>>("res/Model/Lamp/lamp.obj", sLoader, sPainter);
+    world.lamp1 = Model<SimpleLoader, SimplePainter, SimpleMesh>::CreateModel("res/Model/Lamp/lamp.obj", sLoader, sPainter);
+    world.lamp2 = Model<SimpleLoader, SimplePainter, SimpleMesh>::CreateModel("res/Model/Lamp/lamp.obj", sLoader, sPainter);
     world.lamp1->Load();
     world.lamp2->Load();
 
