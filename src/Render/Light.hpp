@@ -58,9 +58,9 @@ template <typename LightType>
 void LoadLight(GLuint shaderId, const LightType& light, const std::string& glslUniformName)
 {
     // Load common light attributes
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), (glslUniformName + ".ambient").c_str()),  light.ambient.x,  light.ambient.y,  light.ambient.z);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), (glslUniformName + ".diffuse").c_str()),  light.diffuse.x,  light.diffuse.y,  light.diffuse.z);
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), (glslUniformName + ".specular").c_str()), light.specular.x, light.specular.y, light.specular.z);
+    glUniform3f(glGetUniformLocation(shaderId, (glslUniformName + ".ambient").c_str()), light.ambient.x, light.ambient.y, light.ambient.z);
+    glUniform3f(glGetUniformLocation(shaderId, (glslUniformName + ".diffuse").c_str()), light.diffuse.x, light.diffuse.y, light.diffuse.z);
+    glUniform3f(glGetUniformLocation(shaderId, (glslUniformName + ".specular").c_str()), light.specular.x, light.specular.y, light.specular.z);
 
     // Load specific light attributes
     LoadLightSpecific<LightType>(shaderId, light, glslUniformName);
