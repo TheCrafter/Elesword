@@ -62,7 +62,10 @@ public:
     void Move(float distance);
 
     /// Retrieves the Model's model matrix
-    const glm::mat4& GetModelMat();
+    const glm::mat4& GetModelMat() const;
+
+    /// Retrieves the Model's filepath
+    const std::string& GetFilepath() const;
 
 protected:
     /// Constructor

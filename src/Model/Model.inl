@@ -84,9 +84,15 @@ void Model<Loader, Painter, MeshT>::Move(float distance)
 }
 
 template <typename Loader, typename Painter, typename MeshT>
-const glm::mat4& Model<Loader, Painter, MeshT>::GetModelMat()
+const glm::mat4& Model<Loader, Painter, MeshT>::GetModelMat() const
 {
     return mModelMat;
+}
+
+template <typename Loader, typename Painter, typename MeshT>
+const std::string& Model<Loader, Painter, MeshT>::GetFilepath() const
+{
+    return mFilepath;
 }
 
 //--------------------------------------------------
