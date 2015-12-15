@@ -39,7 +39,7 @@ GLenum polygonMode = GL_FILL;
 Camera* worldCam;
 
 // Shaders
-Shader lightingShader, lampShader;
+Shader lightingShader, lampShader, singleColorShader;
 
 // Models
 struct World
@@ -194,6 +194,8 @@ GLFWwindow* CreateContext()
 
     // Setup OpenGL options
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     return window;
 }
@@ -213,37 +215,54 @@ void Render(const World& world)
 
     //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);     // blue(ish)
     glClearColor(0.12f, 0.12f, 0.12f, 1.0f);    // gray
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glStencilMask(0x00);
 
-    lightingShader.Use();
-    curShaderId = lightingShader.GetProgID();
-    glUniformMatrix4fv(glGetUniformLocation(curShaderId, "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
-    glUniformMatrix4fv(glGetUniformLocation(curShaderId, "view"), 1, GL_FALSE, glm::value_ptr(world.view));
+    // Setup Shaders
+        // lightingShader
+    {
+        lightingShader.Use();
+        curShaderId = lightingShader.GetProgID();
+        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
+        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "view"), 1, GL_FALSE, glm::value_ptr(world.view));
 
-    // Set the lighting uniforms
-    glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
+        // Set the lighting uniforms
+        glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
 
-    // Load point lights to GPU
-    LoadLight<PointLight>(curShaderId, world.pointLights[0], "pointLights[0]");
-    LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
+        // Load point lights to GPU
+        LoadLight<PointLight>(curShaderId, world.pointLights[0], "pointLights[0]");
+        LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
+    }
+        // singleColorShader
+    {
+        singleColorShader.Use();
+        curShaderId = singleColorShader.GetProgID();
+        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
+        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "view"), 1, GL_FALSE, glm::value_ptr(world.view));
 
-    // Draw the loaded model
+        // Set the lighting uniforms
+        glUniform3f(glGetUniformLocation(singleColorShader.GetProgID(), "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
+
+        // Load point lights to GPU
+        LoadLight<PointLight>(curShaderId, world.pointLights[0], "pointLights[0]");
+        LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
+    }
+        // lampShader
+    {
+        lampShader.Use();
+        curShaderId = lampShader.GetProgID();
+        GLint viewLoc = glGetUniformLocation(curShaderId, "view"),
+            projLoc = glGetUniformLocation(curShaderId, "projection");
+
+        // Pass matrices to shader (except model for now_
+        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world.view));
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(world.proj));
+    }
+
+    // Draw models
     world.nanosuit->Render(lightingShader);
+    world.nanosuit->RenderOutline(singleColorShader);
     world.nanosuit2->Render(lightingShader);
-
-    //---
-    // Lamp
-    //---
-    lampShader.Use();
-    curShaderId = lampShader.GetProgID();
-    GLint viewLoc  = glGetUniformLocation(curShaderId, "view"),
-          projLoc  = glGetUniformLocation(curShaderId, "projection");
-
-    // Pass matrices to shader (except model for now_
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world.view));
-    glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(world.proj));
-
-    // Draw Lamps
     world.lamp1->Render(lampShader);
     world.lamp2->Render(lampShader);
 
@@ -270,6 +289,7 @@ int main()
     // Load shaders
     lightingShader.Init("res/Shader/Vertex/lighting.vert", "res/Shader/Fragment/lighting.frag");
     lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
+    singleColorShader.Init("res/Shader/Vertex/singleColor.vert", "res/Shader/Fragment/singleColor.frag");
 
     // Create Models
     std::unique_ptr<AssimpLoader> assimpLoader = std::make_unique<AssimpLoader>();
@@ -297,8 +317,8 @@ int main()
     world.nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
     world.nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
 
-    world.nanosuit2->Translate(glm::vec3(-3.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
-    world.nanosuit2->Scale(glm::vec3(0.2f, 0.2f, 0.2f));        // It's a bit too big for our scene, so scale it down
+    world.nanosuit2->Translate(glm::vec3(-3.0f, -1.75f, 0.0f));  // Translate it down a bit so it's at the center of the scene
+    world.nanosuit2->Scale(glm::vec3(0.2f, 0.2f, 0.2f));         // It's a bit too big for our scene, so scale it down
 
     world.lamp1->Translate(world.pointLights[0].attr.position);   // Move it to its position
     world.lamp1->Scale(glm::vec3(0.2f));                          // Make it a smaller cube

@@ -30,12 +30,43 @@ std::unique_ptr<Model> Model::CreateModel(
 //--------------------------------------------------
 void Model::Render(const Shader& shader) const
 {
+    shader.Use();
+
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
     // Load model matrix to GPU
     glUniformMatrix4fv(glGetUniformLocation(shader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(mModelMat));
 
     // Draw meshes
     for(const Mesh& mesh : mData->meshes)
         mRenderMesh(shader, mData->vao, mesh);
+}
+
+void Model::RenderOutline(const Shader& shader) const
+{
+    shader.Use();
+
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilMask(0x00);
+    glDisable(GL_DEPTH_TEST);
+
+    // Copy model's model matrix
+    glm::mat4 outlineModelMat = mModelMat;
+
+    // Scale it up and move it down to look like outline
+    outlineModelMat = glm::translate(outlineModelMat, glm::vec3(0.0f, -0.2f, 0.0f));
+    outlineModelMat = glm::scale(outlineModelMat, glm::vec3(1.03f, 1.03f, 1.03f));
+
+    // Load model matrix to GPU
+    glUniformMatrix4fv(glGetUniformLocation(shader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(outlineModelMat));
+
+    // Draw meshes
+    for(const Mesh& mesh : mData->meshes)
+        mRenderMesh(shader, mData->vao, mesh);
+
+    glStencilMask(0xFF);
+    glEnable(GL_DEPTH_TEST);
 }
 
 void Model::Reset()

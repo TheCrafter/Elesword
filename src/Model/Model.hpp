@@ -55,6 +55,9 @@ public:
     /// Use a Shader to draw meshes
     void Render(const Shader& shader) const;
 
+    /// Use a Shader to draw model's outline
+    void RenderOutline(const Shader& shader) const;
+
     /// Resets the Model's model matrix
     void Reset();
 
