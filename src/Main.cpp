@@ -48,7 +48,7 @@ struct World
     Camera camera;
 
     // Models
-    std::unique_ptr<Model> nanosuit, lamp1, lamp2;
+    std::unique_ptr<Model> nanosuit, nanosuit2, lamp1, lamp2;
 
     // Other matrices
     glm::mat4 view, proj;
@@ -229,6 +229,7 @@ void Render(const World& world)
 
     // Draw the loaded model
     world.nanosuit->Render(lightingShader);
+    world.nanosuit2->Render(lightingShader);
 
     //---
     // Lamp
@@ -274,14 +275,9 @@ int main()
     std::unique_ptr<AssimpLoader> assimpLoader = std::make_unique<AssimpLoader>();
     std::unique_ptr<AssimpPainter> assimpPainter = std::make_unique<AssimpPainter>();
 
-    Model::LoadCb lcb = std::bind(
-        &AssimpLoader::LoadData,
-        assimpLoader.get(),
-        std::placeholders::_1,
-        std::placeholders::_2,
-        std::placeholders::_3,
-        std::placeholders::_4,
-        std::placeholders::_5);
+    // Load data
+    std::unique_ptr<ModelData> nanosuitData(assimpLoader->LoadData("res/Model/Nanosuit/nanosuit.obj"));
+    std::unique_ptr<ModelData> lampData(assimpLoader->LoadData("res/Model/Lamp/lamp.obj"));
 
     Model::RenderMeshCb rmcb = std::bind(
         &AssimpPainter::DrawMesh,
@@ -290,20 +286,19 @@ int main()
         std::placeholders::_2,
         std::placeholders::_3);
 
-    world.nanosuit = Model::CreateModel("res/Model/Nanosuit/nanosuit.obj", lcb, rmcb);
-    world.lamp1 = Model::CreateModel("res/Model/Lamp/lamp.obj", lcb, rmcb);
-    world.lamp2 = Model::CreateModel("res/Model/Lamp/lamp.obj", lcb, rmcb);
-
-    // Load models
-    world.nanosuit->Load(world.nanosuit);
-    world.lamp1->Load(world.lamp1);
-    world.lamp2->Load(world.lamp2);
+    world.nanosuit = Model::CreateModel(nanosuitData.get(), rmcb);
+    world.nanosuit2 = Model::CreateModel(nanosuitData.get(), rmcb);
+    world.lamp1 = Model::CreateModel(lampData.get(), rmcb);
+    world.lamp2 = Model::CreateModel(lampData.get(), rmcb);
 
     GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
     GLfloat lastFrame = 0.0f;  	// Time of last frame
 
     world.nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
     world.nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
+
+    world.nanosuit2->Translate(glm::vec3(-3.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
+    world.nanosuit2->Scale(glm::vec3(0.2f, 0.2f, 0.2f));        // It's a bit too big for our scene, so scale it down
 
     world.lamp1->Translate(world.pointLights[0].attr.position);   // Move it to its position
     world.lamp1->Scale(glm::vec3(0.2f));                          // Make it a smaller cube

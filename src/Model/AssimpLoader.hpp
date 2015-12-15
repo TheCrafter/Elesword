@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 #define GLEW_STATIC
 #include <GL/glew.h>
@@ -14,12 +15,7 @@
 class AssimpLoader
 {
 public:
-    bool LoadData(
-        const std::string& filepath,
-        GLuint& vao,
-        GLuint& vbo,
-        std::vector<GLfloat>& vData,
-        std::vector<Mesh>& vMeshes);
+    std::unique_ptr<ModelData> LoadData(const std::string& filepath);
 
 }; //~ AssimpLoader
 

@@ -24,13 +24,9 @@ GLint SampleTextureFromFile(const std::string& path);
 //--------------------------------------------------
 // AssimpLoader
 //--------------------------------------------------
-bool AssimpLoader::LoadData(
-    const std::string& filepath,
-    GLuint& vao,
-    GLuint& vbo,
-    std::vector<GLfloat>& vData,
-    std::vector<Mesh>& vMeshes)
+std::unique_ptr<ModelData> AssimpLoader::LoadData(const std::string& filepath)
 {
+    std::unique_ptr<ModelData> rVal(std::make_unique<ModelData>());
     Assimp::Importer importer;
 
     const aiScene* scene = importer.ReadFile(filepath,
@@ -63,32 +59,32 @@ bool AssimpLoader::LoadData(
         // Update offset
         offset += curMesh->mNumVertices;
 
-        // Add Data to vData vector
+        // Add Data to rVal->data vector
         for(unsigned int j = 0; j < curMesh->mNumVertices; j++)
         {
             // Vertices
-            vData.push_back(curMesh->mVertices[j].x);
-            vData.push_back(curMesh->mVertices[j].y);
-            vData.push_back(curMesh->mVertices[j].z);
+            rVal->data.push_back(curMesh->mVertices[j].x);
+            rVal->data.push_back(curMesh->mVertices[j].y);
+            rVal->data.push_back(curMesh->mVertices[j].z);
 
             // Normals
-            vData.push_back(curMesh->mNormals[j].x);
-            vData.push_back(curMesh->mNormals[j].y);
-            vData.push_back(curMesh->mNormals[j].z);
+            rVal->data.push_back(curMesh->mNormals[j].x);
+            rVal->data.push_back(curMesh->mNormals[j].y);
+            rVal->data.push_back(curMesh->mNormals[j].z);
 
             // TexCoords
             if(curMesh->HasTextureCoords(0))
             {
-                vData.push_back(curMesh->mTextureCoords[0][j].x);
-                vData.push_back(curMesh->mTextureCoords[0][j].y);
-                vData.push_back(curMesh->mTextureCoords[0][j].z);
+                rVal->data.push_back(curMesh->mTextureCoords[0][j].x);
+                rVal->data.push_back(curMesh->mTextureCoords[0][j].y);
+                rVal->data.push_back(curMesh->mTextureCoords[0][j].z);
             }
             else
             {
                 // TODO: Handle that case
-                // vData.push_back(0);
-                // vData.push_back(0);
-                // vData.push_back(0);
+                // rVal->data.push_back(0);
+                // rVal->data.push_back(0);
+                // rVal->data.push_back(0);
             }
         }
 
@@ -126,22 +122,22 @@ bool AssimpLoader::LoadData(
         }
 
         // Add new mesh to vector
-        vMeshes.push_back(newMesh);
+        rVal->meshes.push_back(newMesh);
     }
 
     // Load to gpu
-    glGenBuffers(1, &vbo);
-    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &(rVal->vbo));
+    glGenVertexArrays(1, &(rVal->vao));
 
-    glBindVertexArray(vao);
+    glBindVertexArray(rVal->vao);
     {
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, rVal->vbo);
         {
             // Bind data
             glBufferData(
                 GL_ARRAY_BUFFER,
-                vData.size() * sizeof(GLfloat),
-                vData.data(),
+                rVal->data.size() * sizeof(GLfloat),
+                rVal->data.data(),
                 GL_STATIC_DRAW);
 
             // Vertices
@@ -158,7 +154,7 @@ bool AssimpLoader::LoadData(
         }
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-        for(Mesh& mesh : vMeshes)
+        for(Mesh& mesh : rVal->meshes)
         {
             glGenBuffers(1, &mesh.ebo);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
@@ -172,7 +168,7 @@ bool AssimpLoader::LoadData(
     }
     glBindVertexArray(0);
 
-    return true;
+    return std::move(rVal);
 }
 
 //--------------------------------------------------

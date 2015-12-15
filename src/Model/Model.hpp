@@ -20,16 +20,22 @@ WARN_GUARD_OFF
 #include "../Render/Shader.hpp"
 #include "../Texture.hpp"
 
+struct ModelData
+{
+    std::vector<GLfloat> data;    /// Vertices, Normals, TexCoords in one vector
+    std::vector<Mesh>    meshes;  /// Meshes for this model
+
+    GLuint vao,                   /// Ids for the VAO and VOB Load() used to upload data to GPU
+           vbo;
+
+    /// Destructor
+    ~ModelData();
+
+}; //~ ModelData
+
 class Model
 {
 public:
-    using LoadCb = std::function<bool(
-        const std::string&,     // Filepath of model
-        GLuint&,                // Model's vao
-        GLuint&,                // Model's vbo
-        std::vector<GLfloat>&,  // Model's data
-        std::vector<Mesh>&)>;   // Model's meshes
-
     using RenderMeshCb = std::function<void(
         const Shader& shader,
         GLuint vao,
@@ -44,14 +50,7 @@ public:
     */
 
     /// Named constructor
-    static std::unique_ptr<Model> CreateModel(const std::string& filepath, LoadCb load, RenderMeshCb renderMesh);
-
-    /// Destructor
-    ~Model();
-
-    /// Loads the data, first in the containers and then sends it to GPU in one go
-    /// If it fails it resets the unique_ptr
-    void Load(std::unique_ptr<Model>& model);
+    static std::unique_ptr<Model> CreateModel(const ModelData* const data, RenderMeshCb renderMesh);
 
     /// Use a Shader to draw meshes
     void Render(const Shader& shader) const;
@@ -74,22 +73,13 @@ public:
     /// Retrieves the Model's model matrix
     const glm::mat4& GetModelMat() const;
 
-    /// Retrieves the Model's filepath
-    const std::string& GetFilepath() const;
-
 protected:
     /// Constructor
-    Model(const std::string& filepath, LoadCb load, RenderMeshCb renderMesh);
+    Model(const ModelData* const mData, RenderMeshCb renderMesh);
 
 private:
-    std::vector<GLfloat> mData;   /// Vertices, Normals, TexCoords in one vector
-    std::vector<Mesh>    mMeshes; /// Meshes for this model
+    const ModelData* mData;       /// Data for this model
 
-    GLuint mVAO,                  /// Ids for the VAO and VOB Load() used to upload data to GPU
-           mVBO;
-    std::string mFilepath;        /// Filepath for this model's data
-
-    LoadCb       mLoad;           /// Callback to a function to load this model
     RenderMeshCb mRenderMesh;     /// Callback to a function to render a mesh
 
     glm::mat4 mModelMat;          /// Model 4x4 matrix for this model
