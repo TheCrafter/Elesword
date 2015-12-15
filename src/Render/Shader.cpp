@@ -88,6 +88,17 @@ void Shader::Use() const
     glUseProgram(mProgramID);
 }
 
+void Shader::LoadView(const glm::mat4& view) const
+{
+    glUniformMatrix4fv(glGetUniformLocation(GetProgID(), "view"), 1, GL_FALSE, glm::value_ptr(view));
+}
+
+void Shader::LoadProjection(const glm::mat4& proj) const
+{
+    glUniformMatrix4fv(glGetUniformLocation(GetProgID(), "projection"), 1, GL_FALSE, glm::value_ptr(proj));
+
+}
+
 GLuint Shader::GetProgID() const
 {
     return mProgramID;

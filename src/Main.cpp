@@ -211,8 +211,6 @@ void Update(World& world, float deltaTime)
 
 void Render(const World& world)
 {
-    GLuint curShaderId;
-
     //glClearColor(0.2f, 0.3f, 0.3f, 1.0f);     // blue(ish)
     glClearColor(0.12f, 0.12f, 0.12f, 1.0f);    // gray
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -222,41 +220,36 @@ void Render(const World& world)
         // lightingShader
     {
         lightingShader.Use();
-        curShaderId = lightingShader.GetProgID();
-        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
-        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "view"), 1, GL_FALSE, glm::value_ptr(world.view));
+        GLuint id = lightingShader.GetProgID();
+        lightingShader.LoadView(world.view);
+        lightingShader.LoadProjection(world.proj);
 
         // Set the lighting uniforms
-        glUniform3f(glGetUniformLocation(lightingShader.GetProgID(), "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
+        glUniform3f(glGetUniformLocation(id, "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
 
         // Load point lights to GPU
-        LoadLight<PointLight>(curShaderId, world.pointLights[0], "pointLights[0]");
-        LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
+        LoadLight<PointLight>(id, world.pointLights[0], "pointLights[0]");
+        LoadLight<PointLight>(id, world.pointLights[1], "pointLights[1]");
     }
         // singleColorShader
     {
         singleColorShader.Use();
-        curShaderId = singleColorShader.GetProgID();
-        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "projection"), 1, GL_FALSE, glm::value_ptr(world.proj));
-        glUniformMatrix4fv(glGetUniformLocation(curShaderId, "view"), 1, GL_FALSE, glm::value_ptr(world.view));
+        GLuint id = singleColorShader.GetProgID();
+        singleColorShader.LoadView(world.view);
+        singleColorShader.LoadProjection(world.proj);
 
         // Set the lighting uniforms
-        glUniform3f(glGetUniformLocation(singleColorShader.GetProgID(), "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
+        glUniform3f(glGetUniformLocation(id, "viewPos"), world.camera.mCameraPos.x, world.camera.mCameraPos.y, world.camera.mCameraPos.z);
 
         // Load point lights to GPU
-        LoadLight<PointLight>(curShaderId, world.pointLights[0], "pointLights[0]");
-        LoadLight<PointLight>(curShaderId, world.pointLights[1], "pointLights[1]");
+        LoadLight<PointLight>(id, world.pointLights[0], "pointLights[0]");
+        LoadLight<PointLight>(id, world.pointLights[1], "pointLights[1]");
     }
         // lampShader
     {
         lampShader.Use();
-        curShaderId = lampShader.GetProgID();
-        GLint viewLoc = glGetUniformLocation(curShaderId, "view"),
-            projLoc = glGetUniformLocation(curShaderId, "projection");
-
-        // Pass matrices to shader (except model for now_
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world.view));
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(world.proj));
+        lampShader.LoadView(world.view);
+        lampShader.LoadProjection(world.proj);
     }
 
     // Draw models
