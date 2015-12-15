@@ -14,24 +14,11 @@ WARN_GUARD_ON
 #include <glm/gtc/type_ptr.hpp>
 WARN_GUARD_OFF
 
+#include "Mesh.hpp"
 #include "../Config.hpp"
 #include "../Movement.hpp"
 #include "../Render/Shader.hpp"
 #include "../Texture.hpp"
-
-/// Mesh class to bundle a mesh's properties
-struct Mesh
-{
-    GLuint ebo;                     /// EBO for this mesh
-    GLuint vbo;                     /// VBO for this mesh
-    std::vector<GLuint> indices;    /// Indices of this mesh
-    std::vector<Texture> textures;  /// Textures of this mesh
-    unsigned int dataOffset;        /// Starting position in mData
-
-    /// Constructor
-    Mesh();
-
-}; //~ Mesh
 
 class Model
 {
