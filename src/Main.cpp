@@ -39,7 +39,7 @@ GLenum polygonMode = GL_FILL;
 Camera* worldCam;
 
 // Shaders
-Shader lightingShader, lampShader, singleColorShader;
+Shader lightingShader, lampShader, singleColorShader, simpleShader;
 
 // Models
 struct World
@@ -49,6 +49,9 @@ struct World
 
     // Models
     std::unique_ptr<Model> nanosuit, nanosuit2, lamp1, lamp2;
+    std::vector<glm::vec3> vegetation;
+    GLuint transparentVAO, transparentVBO;
+    GLint transparentTexture;
 
     // Other matrices
     glm::mat4 view, proj;
@@ -77,6 +80,12 @@ struct World
         pointLights[1].attr.constant  = 1.0f;
         pointLights[1].attr.linear    = 0.009f;
         pointLights[1].attr.quadratic = 0.0032f;
+
+        vegetation.push_back(glm::vec3(-1.5f, 0.0f, -0.48f));
+        vegetation.push_back(glm::vec3(1.5f, 0.0f, 0.51f));
+        vegetation.push_back(glm::vec3(0.0f, 0.0f, 0.7f));
+        vegetation.push_back(glm::vec3(-0.3f, 0.0f, -2.3f));
+        vegetation.push_back(glm::vec3(0.5f, 0.0f, -0.6f));
     }
 
 };
@@ -86,6 +95,33 @@ bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 //-----------------------------------------------------
+
+GLint TextureFromFile(const std::string& path)
+{
+    GLuint textureID;
+    glGenTextures(1, &textureID);
+
+    // Load image
+    int width, height;
+    unsigned char* image = SOIL_load_image(path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
+
+    // Assign texture to ID
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    // Parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // Use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes value from next repeat 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    SOIL_free_image_data(image);
+    return textureID;
+}
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
 {
@@ -251,6 +287,12 @@ void Render(const World& world)
         lampShader.LoadView(world.view);
         lampShader.LoadProjection(world.proj);
     }
+        // simpleShader
+    {
+        simpleShader.Use();
+        simpleShader.LoadView(world.view);
+        simpleShader.LoadProjection(world.proj);
+    }
 
     // Draw models
     world.nanosuit->Render(lightingShader);
@@ -258,6 +300,25 @@ void Render(const World& world)
     world.nanosuit2->Render(lightingShader);
     world.lamp1->Render(lampShader);
     world.lamp2->Render(lampShader);
+
+    // Vegetation
+    glStencilFunc(GL_ALWAYS, 1, 0xFF);
+    glStencilMask(0xFF);
+
+    simpleShader.Use();
+    glBindVertexArray(world.transparentVAO);
+    glBindTexture(GL_TEXTURE_2D, world.transparentTexture);
+    for(GLuint i = 0; i < world.vegetation.size(); i++)
+    {
+        glm::mat4 model = glm::mat4();
+        model = glm::translate(model, world.vegetation[i]);
+        glUniformMatrix4fv(glGetUniformLocation(simpleShader.GetProgID(), "model"), 1, GL_FALSE, glm::value_ptr(model));
+        // Draw container
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(0);
+    glBindVertexArray(0);
 
     // Swap the screen buffers
     glfwSwapBuffers(window);
@@ -279,10 +340,11 @@ int main()
     World world;
     worldCam = &world.camera;
 
-    // Load shaders
-    lightingShader.Init("res/Shader/Vertex/lighting.vert", "res/Shader/Fragment/lighting.frag");
-    lampShader.Init("res/Shader/Vertex/lamp.vert", "res/Shader/Fragment/lamp.frag");
+    // Load shaders        Vertex shader path                    Fragment shader path
+    lightingShader.Init   ("res/Shader/Vertex/lighting.vert",    "res/Shader/Fragment/lighting.frag");
+    lampShader.Init       ("res/Shader/Vertex/lamp.vert",        "res/Shader/Fragment/lamp.frag");
     singleColorShader.Init("res/Shader/Vertex/singleColor.vert", "res/Shader/Fragment/singleColor.frag");
+    simpleShader.Init     ("res/Shader/Vertex/simple.vert",      "res/Shader/Fragment/simple.frag");
 
     // Create Models
     std::unique_ptr<AssimpLoader> assimpLoader = std::make_unique<AssimpLoader>();
@@ -304,8 +366,8 @@ int main()
     world.lamp1 = Model::CreateModel(lampData.get(), rmcb);
     world.lamp2 = Model::CreateModel(lampData.get(), rmcb);
 
-    GLfloat deltaTime = 0.0f;	// Time between current frame and last frame
-    GLfloat lastFrame = 0.0f;  	// Time of last frame
+    GLfloat deltaTime = 0.0f;   // Time between current frame and last frame
+    GLfloat lastFrame = 0.0f;   // Time of last frame
 
     world.nanosuit->Translate(glm::vec3(0.0f, -1.75f, 0.0f)); // Translate it down a bit so it's at the center of the scene
     world.nanosuit->Scale(glm::vec3(0.2f, 0.2f, 0.2f));       // It's a bit too big for our scene, so scale it down
@@ -318,6 +380,41 @@ int main()
 
     world.lamp2->Translate(world.pointLights[1].attr.position);   // Move it to its position
     world.lamp2->Scale(glm::vec3(0.2f));                          // Make it a smaller cube
+
+    // Set up vertex data (and buffer(s)) and attribute pointers
+    GLfloat transparentVertices[] = {
+        // Positions       // Texture Coords
+        0.5f,  0.5f, 0.0f, 1.0f, 1.0f, // Top Right
+        0.5f, -0.5f, 0.0f, 1.0f, 0.0f, // Bottom Right
+       -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, // Bottom Left
+       -0.5f,  0.5f, 0.0f, 0.0f, 1.0f  // Top Left
+    };
+    GLuint indices[] = {  // Note that we start from 0!
+        0, 1, 3, // First Triangle
+        1, 2, 3  // Second Triangle
+    };
+
+    GLuint EBO;
+    glGenVertexArrays(1, &world.transparentVAO);
+    glGenBuffers(1, &world.transparentVBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(world.transparentVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, world.transparentVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), transparentVertices, GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(1);
+        //glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+    world.transparentTexture = TextureFromFile("res/Image/grass.png");
 
     // Game loop
     while(!glfwWindowShouldClose(window))
