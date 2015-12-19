@@ -18,7 +18,7 @@ WARN_GUARD_OFF
 #include "../Config.hpp"
 #include "../Movement.hpp"
 #include "../Render/Shader.hpp"
-#include "../Texture.hpp"
+#include "../Texture/Texture.hpp"
 
 struct ModelData
 {

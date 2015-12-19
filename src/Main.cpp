@@ -25,6 +25,7 @@ WARN_GUARD_OFF
 #include "Model/AssimpLoader.hpp"
 #include "Render/Light.hpp"
 #include "Render/Shader.hpp"
+#include "Texture/TextureStore.hpp"
 
 //-----------------------------------------------------
 // Data
@@ -96,40 +97,13 @@ GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
 //-----------------------------------------------------
 
-GLint TextureFromFile(const std::string& path)
+void keyCallback(GLFWwindow* wnd, int key, int scancode, int action, int mode)
 {
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    // Load image
-    int width, height;
-    unsigned char* image = SOIL_load_image(path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
-
-    // Assign texture to ID
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    // Parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);  // Use GL_CLAMP_TO_EDGE to prevent semi-transparent borders. Due to interpolation it takes value from next repeat 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    SOIL_free_image_data(image);
-    return textureID;
-}
-
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode)
-{
-    (void*)scancode;
-    (void*)mode;
+    (void)scancode;
+    (void)mode;
 
     if(key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GL_TRUE);
+        glfwSetWindowShouldClose(wnd, GL_TRUE);
 
     // Draw in wireframe
     if(key == GLFW_KEY_F1 && action == GLFW_PRESS)
@@ -147,9 +121,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode
     }
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void mouse_callback(GLFWwindow* wnd, double xpos, double ypos)
 {
-    (void*)window;
+    (void*)wnd;
 
     if(firstMouse)
     {
@@ -204,17 +178,17 @@ GLFWwindow* CreateContext()
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
-    if(window == nullptr)
+    GLFWwindow* wnd = glfwCreateWindow(800, 600, "LearnOpenGL", nullptr, nullptr);
+    if(wnd == nullptr)
     {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
         return nullptr;
     }
-    glfwSetKeyCallback(window, keyCallback);
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(wnd, keyCallback);
+    glfwSetCursorPosCallback(wnd, mouse_callback);
+    glfwSetInputMode(wnd, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwMakeContextCurrent(wnd);
 
     // Set this to true so GLEW knows to use a modern approach to retrieving function pointers and extensions
     glewExperimental = GL_TRUE;
@@ -233,7 +207,7 @@ GLFWwindow* CreateContext()
     glEnable(GL_STENCIL_TEST);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
-    return window;
+    return wnd;
 }
 
 void Update(World& world, float deltaTime)
@@ -346,8 +320,11 @@ int main()
     singleColorShader.Init("res/Shader/Vertex/singleColor.vert", "res/Shader/Fragment/singleColor.frag");
     simpleShader.Init     ("res/Shader/Vertex/simple.vert",      "res/Shader/Fragment/simple.frag");
 
+    // Create texture store
+    std::unique_ptr<TextureStore> textureStore(std::make_unique<TextureStore>());
+
     // Create Models
-    std::unique_ptr<AssimpLoader> assimpLoader = std::make_unique<AssimpLoader>();
+    std::unique_ptr<AssimpLoader> assimpLoader = std::make_unique<AssimpLoader>(textureStore.get());
     std::unique_ptr<AssimpPainter> assimpPainter = std::make_unique<AssimpPainter>();
 
     // Load data
@@ -414,7 +391,7 @@ int main()
         //glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    world.transparentTexture = TextureFromFile("res/Image/grass.png");
+    world.transparentTexture = textureStore->LoadTexture("res/Image/grass.png", true);
 
     // Game loop
     while(!glfwWindowShouldClose(window))

@@ -1,29 +1,14 @@
 #include "AssimpLoader.hpp"
 #include <iostream>
-
-#include <assimp/Importer.hpp>      // C++ importer interface
-#include <assimp/scene.h>           // Output data structure
-#include <assimp/postprocess.h>     // Post processing flags
-
 #include <SOIL.h>
-
-#include "../Config.hpp"
-
-//--------------------------------------------------
-// Declarations
-//--------------------------------------------------
-std::vector<Texture> SampleLoadMaterialTextures(
-    aiMaterial* mat,
-    aiTextureType type,
-    std::string typeName,
-    std::string assetRootDir,
-    std::vector<Texture>& loadedTextures);
-
-GLint SampleTextureFromFile(const std::string& path);
 
 //--------------------------------------------------
 // AssimpLoader
 //--------------------------------------------------
+AssimpLoader::AssimpLoader(TextureStore* textureStore) : mTextureStore(textureStore)
+{
+}
+
 std::unique_ptr<ModelData> AssimpLoader::LoadData(const std::string& filepath)
 {
     std::unique_ptr<ModelData> rVal(std::make_unique<ModelData>());
@@ -45,7 +30,6 @@ std::unique_ptr<ModelData> AssimpLoader::LoadData(const std::string& filepath)
     }
 
     // Put vertices to data
-    std::vector<Texture> loadedTextures;
     for(unsigned int i = 0, offset = 0; i < scene->mNumMeshes; i++)
     {
         aiMesh* curMesh = scene->mMeshes[i];
@@ -103,21 +87,19 @@ std::unique_ptr<ModelData> AssimpLoader::LoadData(const std::string& filepath)
             aiMaterial* material = scene->mMaterials[curMesh->mMaterialIndex];
 
             // Diffuse maps
-            std::vector<Texture> diffuseMaps = SampleLoadMaterialTextures(
+            std::vector<Texture> diffuseMaps = LoadMaterialTextures(
                 material,
                 aiTextureType_DIFFUSE,
                 SHADER_TEXTURE_DIFFUSE_PREFIX,
-                filepath.substr(0, filepath.find_last_of('/')),
-                loadedTextures);
+                filepath.substr(0, filepath.find_last_of('/')));
             newMesh.textures.insert(newMesh.textures.end(), diffuseMaps.begin(), diffuseMaps.end());
 
             // Specular maps
-            std::vector<Texture> specularMaps = SampleLoadMaterialTextures(
+            std::vector<Texture> specularMaps = LoadMaterialTextures(
                 material,
                 aiTextureType_SPECULAR,
                 SHADER_TEXTURE_SPECULAR_PREFIX,
-                filepath.substr(0, filepath.find_last_of('/')),
-                loadedTextures);
+                filepath.substr(0, filepath.find_last_of('/')));
             newMesh.textures.insert(newMesh.textures.end(), specularMaps.begin(), specularMaps.end());
         }
 
@@ -169,6 +151,33 @@ std::unique_ptr<ModelData> AssimpLoader::LoadData(const std::string& filepath)
     glBindVertexArray(0);
 
     return std::move(rVal);
+}
+
+std::vector<Texture> AssimpLoader::LoadMaterialTextures(
+    aiMaterial* mat,
+    aiTextureType type,
+    std::string typeName,
+    std::string assetRootDir)
+{
+    std::vector<Texture> textures;
+
+    for(GLuint i = 0; i < mat->GetTextureCount(type); i++)
+    {
+        aiString path;
+        mat->GetTexture(type, i, &path);
+        // Retrieve absolute filepath
+        std::string absPath(assetRootDir + '/' + path.C_Str());
+
+        Texture texture;
+        texture.id = mTextureStore->LoadTexture(absPath);
+
+        auto it = std::find(TextureTypeNames.begin(), TextureTypeNames.end(), typeName);
+        texture.type = (TextureType)std::distance(TextureTypeNames.begin(), it);
+
+        textures.push_back(texture);
+    }
+
+    return textures;
 }
 
 //--------------------------------------------------
@@ -242,83 +251,4 @@ void AssimpPainter::DrawMesh(
         glActiveTexture(GL_TEXTURE0 + (GLuint)index2);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
-}
-
-//--------------------------------------------------
-// Util
-//--------------------------------------------------
-std::vector<Texture> SampleLoadMaterialTextures(
-    aiMaterial* mat,
-    aiTextureType type,
-    std::string typeName,
-    std::string assetRootDir,
-    std::vector<Texture>& loadedTextures)
-{
-    std::vector<Texture> textures;
-
-    for(GLuint i = 0; i < mat->GetTextureCount(type); i++)
-    {
-        aiString path;
-        mat->GetTexture(type, i, &path);
-        // Check if texture was loaded before and if so,
-        // continue to next iteration: skip loading a new texture
-        GLboolean skip = false;
-        for(GLuint j = 0; j < loadedTextures.size(); j++)
-        {
-            if(loadedTextures[j].path.compare(path.C_Str()) == 0)
-            {
-                textures.push_back(loadedTextures[j]);
-                // A texture with the same filepath has already been loaded, continue to next one
-                skip = true;
-                break;
-            }
-        }
-
-        if(!skip)
-        {   // If texture hasn't been loaded already, load it
-
-            // Retrieve absolute filepath
-            std::string absPath(assetRootDir + '/' + path.C_Str());
-
-            Texture texture;
-            texture.id = SampleTextureFromFile(absPath);
-
-            auto it = std::find(TextureTypeNames.begin(), TextureTypeNames.end(), typeName);
-            texture.type = (TextureType)std::distance(TextureTypeNames.begin(), it);
-
-            texture.path = path.C_Str();
-            textures.push_back(texture);
-
-            // Store it as texture loaded for entire model, to ensure we won't unnecessary
-            // load duplicate textures.
-            loadedTextures.push_back(std::move(texture));
-        }
-    }
-
-    return textures;
-}
-
-GLint SampleTextureFromFile(const std::string& path)
-{
-    GLuint textureID;
-    glGenTextures(1, &textureID);
-
-    // Load image
-    int width, height;
-    unsigned char* image = SOIL_load_image(path.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
-
-    // Assign texture to ID
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    // Parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glBindTexture(GL_TEXTURE_2D, 0);
-
-    SOIL_free_image_data(image);
-    return textureID;
 }

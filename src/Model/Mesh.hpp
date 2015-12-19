@@ -14,7 +14,7 @@ WARN_GUARD_ON
 #include <glm/gtc/type_ptr.hpp>
 WARN_GUARD_OFF
 
-#include "../Texture.hpp"
+#include "../Texture/Texture.hpp"
 
 /// Mesh class to bundle a mesh's properties
 struct Mesh
